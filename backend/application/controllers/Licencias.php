@@ -49,6 +49,7 @@ class Licencias extends REST_Controller
      */
     public function porEstudiante(string $rude): void
     {
+        $rude = trim($rude);
         // Verificar que el estudiante existe
         $estudiante = $this->Estudiante_model->obtenerPorRude($rude);
         if (! $estudiante) {
