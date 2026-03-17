@@ -35,9 +35,15 @@ class Asignacion_model extends CI_Model {
     public function verificar_choque_profesor(int $profesor_id, string $dia, string $inicio, string $fin, ?int $horario_id_actual = null) {
         $this->db->select('h.id');
         $this->db->from('horarios h');
-        $this->db->join('asignaciones a', 'a.id = h.asignacion_id');
+        $this->db->join('asignaciones a', 'a.id = h.asignacion_id', 'left'); // Cambiamos a LEFT JOIN
+        
+        $this->db->group_start();
         $this->db->where('a.profesor_id', $profesor_id);
+        $this->db->or_where('h.profesor_id', $profesor_id);
+        $this->db->group_end();
+        
         $this->db->where('h.dia', $dia);
+        $this->db->where('h.activo', 1);
         
         // Lógica de solapamiento de tiempo
         $this->db->group_start();
