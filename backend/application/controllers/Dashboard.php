@@ -29,7 +29,7 @@ class Dashboard extends REST_Controller
             $asistenciasHoy = $this->db->where('fecha', date('Y-m-d'))->count_all_results('asistencias');
 
             // Licencias de hoy
-            $licenciasHoy = $this->db->where('fecha', date('Y-m-d'))->count_all_results('licencias');
+            $licenciasHoy = $this->db->where('fecha_inicio', date('Y-m-d'))->count_all_results('licencias');
 
             // Cursos activos (gestión actual)
             $gestionActual = date('Y');
