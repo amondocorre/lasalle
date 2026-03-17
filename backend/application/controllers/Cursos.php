@@ -23,8 +23,9 @@ class Cursos extends REST_Controller
     {
         $gestion = $this->input->get('gestion') ?? date('Y');
         $turno   = $this->input->get('turno');
+        $profesorId = $this->input->get('profesor_id');
 
-        $cursos = $this->Curso_model->listar($gestion, $turno);
+        $cursos = $this->Curso_model->listar($gestion, $turno, $profesorId);
         $this->success($cursos);
     }
 

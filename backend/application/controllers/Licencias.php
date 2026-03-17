@@ -47,7 +47,7 @@ class Licencias extends REST_Controller
      * GET /api/licencias/estudiante/{rude}
      * Lista el historial de licencias de un estudiante específico.
      */
-    public function porEstudiante(string $rude): void
+    public function porEstudiante($rude): void
     {
         $rude = trim($rude);
         // Verificar que el estudiante existe
@@ -89,7 +89,10 @@ class Licencias extends REST_Controller
 
         // Valores por defecto
         $data['dias']   = (int) ($data['dias'] ?? 1);
-        $data['estado'] = 'pendiente';
+        $data['estado'] = 'aprobada'; // Por requerimiento, todas se registran aprobadas
+        
+        // Capturar usuario que registra
+        $data['registrado_por'] = $data['registrado_por'] ?? 'Sistema';
 
         $id = $this->Licencia_model->crear($data);
 
@@ -147,7 +150,7 @@ class Licencias extends REST_Controller
             return;
         }
 
-        $uploadPath = FCPATH . '../../uploads/licencias/';
+        $uploadPath = FCPATH . 'uploads/licencias/';
 
         // Crear directorio si no existe
         if (! is_dir($uploadPath)) {

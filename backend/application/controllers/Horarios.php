@@ -21,10 +21,11 @@ class Horarios extends REST_Controller
      */
     public function index(): void
     {
-        $cursoId = $this->input->get('curso_id');
-        $dia     = $this->input->get('dia');
-
-        $horarios = $this->Horario_model->listar($cursoId, $dia);
+        $cursoId    = $this->input->get('curso_id');
+        $dia        = $this->input->get('dia');
+        $profesorId = $this->input->get('profesor_id');
+        
+        $horarios = $this->Horario_model->listar($cursoId, $dia, $profesorId);
         $this->success($horarios);
     }
 
@@ -105,8 +106,9 @@ class Horarios extends REST_Controller
         if (empty($data['curso_id'])) {
             $errores['curso_id'] = 'El curso es obligatorio';
         }
-        if (empty($data['materia'])) {
-            $errores['materia'] = 'La materia es obligatoria';
+        // Materia es obligatoria solo si no hay asignacion_id
+        if (empty($data['asignacion_id']) && empty($data['materia'])) {
+            $errores['materia'] = 'La materia o asignación es obligatoria';
         }
         if (empty($data['dia']) || ! in_array($data['dia'], $diasValidos)) {
             $errores['dia'] = 'Día inválido';

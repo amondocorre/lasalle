@@ -43,7 +43,8 @@ class Auth extends REST_Controller {
                     'id'       => $user->id,
                     'username' => $user->username,
                     'nombre'   => $user->nombre,
-                    'rol'      => $user->rol
+                    'rol'      => $user->rol,
+                    'profesor_id' => $user->profesor_id
                 ],
                 'token' => $token
             ]);
@@ -58,8 +59,14 @@ class Auth extends REST_Controller {
      */
     public function me() {
         $token = $this->input->get_request_header('Authorization');
+        
+        // Respaldo por si el servidor filtra el header Authorization
+        if (empty($token)) {
+            $token = $this->input->server('HTTP_AUTHORIZATION');
+        }
+
         // Quitar 'Bearer ' si existe
-        $token = str_replace('Bearer ', '', $token);
+        $token = str_replace('Bearer ', '', $token ?? '');
 
         $user = $this->Usuario_model->find_by_token($token);
 
@@ -73,7 +80,8 @@ class Auth extends REST_Controller {
                 'id'       => $user->id,
                 'username' => $user->username,
                 'nombre'   => $user->nombre,
-                'rol'      => $user->rol
+                'rol'      => $user->rol,
+                'profesor_id' => $user->profesor_id
             ]
         ]);
     }
@@ -83,7 +91,12 @@ class Auth extends REST_Controller {
      */
     public function logout() {
         $token = $this->input->get_request_header('Authorization');
-        $token = str_replace('Bearer ', '', $token);
+        
+        if (empty($token)) {
+            $token = $this->input->server('HTTP_AUTHORIZATION');
+        }
+
+        $token = str_replace('Bearer ', '', $token ?? '');
 
         $user = $this->Usuario_model->find_by_token($token);
         if ($user) {

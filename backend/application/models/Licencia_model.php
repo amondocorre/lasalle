@@ -82,7 +82,7 @@ class Licencia_model extends CI_Model
      */
     public function crear(array $data): int
     {
-        $campos = ['rude', 'fecha_inicio', 'dias', 'motivo', 'solicitante', 'ci_solicitante', 'estado', 'observaciones'];
+        $campos = ['rude', 'fecha_inicio', 'dias', 'motivo', 'solicitante', 'ci_solicitante', 'estado', 'observaciones', 'registrado_por'];
         $insert = array_intersect_key($data, array_flip($campos));
         $this->db->insert(self::TABLA, $insert);
         return $this->db->insert_id();

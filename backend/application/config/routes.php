@@ -71,3 +71,25 @@ $route['api/retrasos']['GET']                  = 'Retrasos/index';
 $route['api/retrasos']['POST']                 = 'Retrasos/store';
 $route['api/retrasos/(:num)']['DELETE']        = 'Retrasos/destroy/$1';
 $route['api/retrasos/estudiante/(:any)']['GET'] = 'Retrasos/porEstudiante/$1';
+
+// ---- Dashboard ----
+$route['api/dashboard/stats']['GET']           = 'Dashboard/stats';
+
+// ---- Asignaciones (Carga Académica) ----
+$route['api/asignaciones/curso/(:num)']['GET']  = 'Asignaciones/curso/$1';
+$route['api/asignaciones/batch']['POST']        = 'Asignaciones/batch';
+$route['api/asignaciones/validar-choque']['POST'] = 'Asignaciones/validar_choque';
+$route['api/asignaciones/(:num)']['DELETE']     = 'Asignaciones/destroy/$1';
+
+// ---- Periodos (Configuración Horarios) ----
+$route['api/periodos']['GET']                  = 'Periodos/index';
+$route['api/periodos']['POST']                 = 'Periodos/store';
+$route['api/periodos/(:num)']['PUT']           = 'Periodos/update/$1';
+$route['api/periodos/(:num)']['DELETE']        = 'Periodos/destroy/$1';
+
+// ---- Profesores ----
+$route['api/profesores']['GET']                = 'Profesores/index';
+$route['api/profesores']['POST']               = 'Profesores/store';
+$route['api/profesores/(:num)']['GET']         = 'Profesores/show/$1';
+$route['api/profesores/(:num)']['PUT']         = 'Profesores/update/$1';
+$route['api/profesores/(:num)']['DELETE']      = 'Profesores/destroy/$1';

@@ -42,7 +42,10 @@ class Materias extends REST_Controller
             return;
         }
 
-        $id = $this->db->insert('materias', ['nombre' => $data['nombre']]);
+        $id = $this->db->insert('materias', [
+            'nombre' => $data['nombre'],
+            'color'  => $data['color'] ?? 'bg-slate-100'
+        ]);
 
         if ($id) {
             $nuevoId = $this->db->insert_id();
@@ -67,7 +70,10 @@ class Materias extends REST_Controller
         }
 
         $this->db->where('id', $id);
-        $ok = $this->db->update('materias', ['nombre' => $data['nombre']]);
+        $ok = $this->db->update('materias', [
+            'nombre' => $data['nombre'],
+            'color'  => $data['color'] ?? 'bg-slate-100'
+        ]);
 
         if ($ok) {
             $actualizada = $this->db->get_where('materias', ['id' => $id])->row();

@@ -12,17 +12,27 @@ class Curso_model extends CI_Model
     /**
      * Lista cursos filtrados por gestión y turno.
      */
-    public function listar(string $gestion, ?string $turno): array
+    public function listar(string $gestion, ?string $turno, ?int $profesorId = null): array
     {
-        $this->db->where('gestion', $gestion);
-        $this->db->where('activo', 1);
+        $this->db->select('c.*');
+        $this->db->from(self::TABLA . ' c');
+        $this->db->where('c.gestion', $gestion);
+        $this->db->where('c.activo', 1);
 
         if ($turno) {
-            $this->db->where('turno', $turno);
+            $this->db->where('c.turno', $turno);
         }
 
-        $this->db->order_by('nombre', 'ASC');
-        return $this->db->get(self::TABLA)->result_array();
+        if ($profesorId) {
+            // Filtrar cursos vinculados a este profesor vía asignaciones o horarios
+            $this->db->group_start();
+            $this->db->where("EXISTS (SELECT 1 FROM asignaciones a WHERE a.curso_id = c.id AND a.profesor_id = $profesorId AND a.activo = 1)", NULL, FALSE);
+            $this->db->or_where("EXISTS (SELECT 1 FROM horarios h WHERE h.curso_id = c.id AND h.profesor_id = $profesorId AND h.activo = 1)", NULL, FALSE);
+            $this->db->group_end();
+        }
+
+        $this->db->order_by('c.nombre', 'ASC');
+        return $this->db->get()->result_array();
     }
 
     /** Obtiene un curso por ID. */

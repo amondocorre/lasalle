@@ -14,10 +14,16 @@ class Asistencia_model extends CI_Model
      */
     public function listar(?string $rude, ?int $cursoId, string $fecha): array
     {
-        $this->db->select('a.*, e.nombres, e.apellidos, e.ci, h.materia, h.hora_inicio, h.hora_fin');
+        $this->db->select('a.*, e.nombres, e.apellidos, e.ci, 
+                          COALESCE(m.nombre, h.materia) as materia, 
+                          h.hora_inicio, h.hora_fin, 
+                          c.nombre as nombre_curso, c.paralelo');
         $this->db->from(self::TABLA . ' a');
         $this->db->join('estudiantes e', 'e.rude = a.rude', 'left');
         $this->db->join('horarios h', 'h.id = a.horario_id', 'left');
+        $this->db->join('asignaciones asig', 'asig.id = h.asignacion_id', 'left');
+        $this->db->join('materias m', 'm.id = asig.materia_id', 'left');
+        $this->db->join('cursos c', 'c.id = a.curso_id', 'left');
         $this->db->where('a.fecha', $fecha);
 
         if ($rude) {
@@ -27,7 +33,11 @@ class Asistencia_model extends CI_Model
             $this->db->where('a.curso_id', $cursoId);
         }
 
-        $this->db->order_by('a.hora_registro', 'ASC');
+        $this->db->order_by('c.nombre', 'ASC');
+        $this->db->order_by('c.paralelo', 'ASC');
+        $this->db->order_by('e.apellidos', 'ASC');
+        $this->db->order_by('e.nombres', 'ASC');
+        
         return $this->db->get()->result_array();
     }
 

@@ -18,12 +18,18 @@ class Usuarios extends REST_Controller {
 
     private function verificar_admin() {
         $token = $this->input->get_request_header('Authorization');
-        $token = str_replace('Bearer ', '', $token);
+        
+        // Respaldo si el header es filtrado por el servidor
+        if (empty($token)) {
+            $token = $this->input->server('HTTP_AUTHORIZATION');
+        }
+
+        $token = str_replace('Bearer ', '', $token ?? '');
         $user = $this->Usuario_model->find_by_token($token);
         
         if (!$user || $user->rol !== 'admin') {
             $this->error('No tiene permisos para acceder a este módulo', 403);
-            exit;
+            exit; // Detenemos la ejecución aquí
         }
     }
 

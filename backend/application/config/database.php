@@ -11,10 +11,10 @@ $query_builder = TRUE;
 
 $db['default'] = array(
     'dsn'      => '',
-    'hostname' => 'localhost',
-    'username' => 'vanguard_admin',
-    'password' => 'Ariana.2107',
-    'database' => 'vanguard_colegio',
+    'hostname' => ENVIRONMENT === 'production' ? 'localhost' : 'localhost',
+    'username' => ENVIRONMENT === 'production' ? 'vanguard_admin' : 'root',
+    'password' => ENVIRONMENT === 'production' ? 'Ariana.2107' : '',
+    'database' => ENVIRONMENT === 'production' ? 'vanguard_colegio' : 'colegiolasalle',
     'dbdriver' => 'mysqli',
     'dbprefix' => '',
     'pconnect' => FALSE,

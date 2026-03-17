@@ -145,7 +145,7 @@ class Estudiantes extends REST_Controller
             return;
         }
 
-        $uploadPath = FCPATH . '../../uploads/fotos/';
+        $uploadPath = FCPATH . 'uploads/fotos/';
 
         // Crear directorio si no existe
         if (! is_dir($uploadPath)) {

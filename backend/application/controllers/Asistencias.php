@@ -22,7 +22,7 @@ class Asistencias extends REST_Controller
      */
     public function index(): void
     {
-        $rude    = $this->input->get('rude');
+        $rude    = trim($this->input->get('rude') ?? '');
         $cursoId = $this->input->get('curso_id');
         $fecha   = $this->input->get('fecha') ?? date('Y-m-d');
 
@@ -75,11 +75,16 @@ class Asistencias extends REST_Controller
         $diaActual  = $this->obtenerDiaEspanol(date('N')); // 1=lunes..7=domingo
 
         // Buscar el horario correspondiente al momento actual para el curso del estudiante
-        $horarioActivo = $this->Horario_model->obtenerHorarioActivo(
-            $estudiante['curso_id'],
-            $diaActual,
-            $horaActual
-        );
+        // O usar el horario_id si fue enviado manualmente
+        if (!empty($data['horario_id'])) {
+            $horarioActivo = $this->Horario_model->obtener($data['horario_id']);
+        } else {
+            $horarioActivo = $this->Horario_model->obtenerHorarioActivo(
+                $estudiante['curso_id'],
+                $diaActual,
+                $horaActual
+            );
+        }
 
         // Verificar si ya existe una asistencia para este período hoy
         $yaRegistrado = $this->Asistencia_model->existeRegistro(
