@@ -28,8 +28,8 @@ class Dashboard extends REST_Controller
             // Asistencias de hoy
             $asistenciasHoy = $this->db->where('fecha', date('Y-m-d'))->count_all_results('asistencias');
 
-            // Licencias pendientes
-            $licenciasPendientes = $this->db->where('estado', 'pendiente')->count_all_results('licencias');
+            // Licencias de hoy
+            $licenciasHoy = $this->db->where('fecha', date('Y-m-d'))->count_all_results('licencias');
 
             // Cursos activos (gestión actual)
             $gestionActual = date('Y');
@@ -40,7 +40,7 @@ class Dashboard extends REST_Controller
             $this->success([
                 'estudiantes' => $estudiantesCount,
                 'asistencias_hoy' => $asistenciasHoy,
-                'licencias_pendientes' => $licenciasPendientes,
+                'licencias_hoy' => $licenciasHoy,
                 'cursos_activos' => $cursosActivos
             ]);
         } catch (Exception $e) {
