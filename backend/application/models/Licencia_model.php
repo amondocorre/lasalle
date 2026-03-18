@@ -64,6 +64,7 @@ class Licencia_model extends CI_Model
         $licencias = $this->db
             ->where('rude', $rude)
             ->order_by('fecha_inicio', 'DESC')
+            ->order_by('id', 'DESC')
             ->get(self::TABLA)
             ->result_array();
 

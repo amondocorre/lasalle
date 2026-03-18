@@ -20,11 +20,18 @@ class Asignacion_model extends CI_Model {
     }
 
     public function eliminar(int $id) {
-        // Antes de eliminar, verificar si tiene horarios vinculados
+        // Antes de eliminar, verificar si tiene horarios ACTIVOS vinculados
         $this->db->where('asignacion_id', $id);
+        $this->db->where('activo', 1);
         if ($this->db->count_all_results('horarios') > 0) {
-            return false; // No se puede eliminar si tiene horarios
+            return false; // No se puede eliminar si tiene horarios activos
         }
+        
+        // Si hay horarios inactivos (soft-deleted), los borramos físicamente 
+        // para que dejen de bloquear la eliminación de la asignación
+        $this->db->where('asignacion_id', $id);
+        $this->db->delete('horarios');
+
         return $this->db->delete(self::TABLA, ['id' => $id]);
     }
 
@@ -35,25 +42,32 @@ class Asignacion_model extends CI_Model {
     public function verificar_choque_profesor(int $profesor_id, string $dia, string $inicio, string $fin, ?int $horario_id_actual = null) {
         $this->db->select('h.id');
         $this->db->from('horarios h');
-        $this->db->join('asignaciones a', 'a.id = h.asignacion_id', 'left'); // Cambiamos a LEFT JOIN
+        // Unimos con asignaciones para saber de quién es el horario
+        $this->db->join('asignaciones a', 'a.id = h.asignacion_id', 'left');
         
-        $this->db->group_start();
-        $this->db->where('a.profesor_id', $profesor_id);
-        $this->db->or_where('h.profesor_id', $profesor_id);
-        $this->db->group_end();
-        
-        $this->db->where('h.dia', $dia);
         $this->db->where('h.activo', 1);
+        $this->db->where('h.dia', $dia);
         
-        // Lógica de solapamiento de tiempo
+        // El choque ocurre si:
+        // 1. La asignación vinculada es del mismo profesor y está activa
+        // 2. O si el horario tiene el profesor_id asignado manualmente (legacy)
         $this->db->group_start();
-        $this->db->where("('$inicio' < h.hora_fin AND '$fin' > h.hora_inicio)");
+            $this->db->group_start();
+                $this->db->where('a.profesor_id', $profesor_id);
+                $this->db->where('a.activo', 1);
+            $this->db->group_end();
+            $this->db->or_where('h.profesor_id', $profesor_id);
         $this->db->group_end();
+        
+        // Lógica de solapamiento de tiempo: (Inicio1 < Fin2) AND (Fin1 > Inicio2)
+        $this->db->where('h.hora_inicio <', $fin);
+        $this->db->where('h.hora_fin >', $inicio);
 
         if ($horario_id_actual) {
             $this->db->where('h.id !=', $horario_id_actual);
         }
 
-        return $this->db->count_all_results() > 0;
+        $query = $this->db->get();
+        return $query->num_rows() > 0;
     }
 }
