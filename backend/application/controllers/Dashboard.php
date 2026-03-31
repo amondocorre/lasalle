@@ -22,8 +22,10 @@ class Dashboard extends REST_Controller
     public function stats(): void
     {
         try {
-            // Estudiantes activos
+            // Estudiantes activos y por sexo
             $estudiantesCount = $this->db->where('activo', 1)->count_all_results('estudiantes');
+            $estudiantesM     = $this->db->where(['activo' => 1, 'sexo' => 'M'])->count_all_results('estudiantes');
+            $estudiantesF     = $this->db->where(['activo' => 1, 'sexo' => 'F'])->count_all_results('estudiantes');
 
             // Asistencias de hoy
             $asistenciasHoy = $this->db->where('fecha', date('Y-m-d'))->count_all_results('asistencias');
@@ -38,10 +40,12 @@ class Dashboard extends REST_Controller
                                       ->count_all_results('cursos');
 
             $this->success([
-                'estudiantes' => $estudiantesCount,
-                'asistencias_hoy' => $asistenciasHoy,
-                'licencias_hoy' => $licenciasHoy,
-                'cursos_activos' => $cursosActivos
+                'estudiantes'        => $estudiantesCount,
+                'estudiantes_m'      => $estudiantesM,
+                'estudiantes_f'      => $estudiantesF,
+                'asistencias_hoy'    => $asistenciasHoy,
+                'licencias_hoy'      => $licenciasHoy,
+                'cursos_activos'     => $cursosActivos
             ]);
         } catch (Exception $e) {
             $this->error('No se pudieron obtener las estadísticas: ' . $e->getMessage(), 500);
