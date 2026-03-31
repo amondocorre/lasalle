@@ -191,12 +191,8 @@ class Estudiantes extends REST_Controller
             $errores['ci'] = 'El CI es obligatorio (máx. 15 caracteres)';
         }
 
-        if (empty($data['nombres'])) {
-            $errores['nombres'] = 'Los nombres son obligatorios';
-        }
-
-        if (empty($data['apellidos'])) {
-            $errores['apellidos'] = 'Los apellidos son obligatorios';
+        if (empty($data['nombre_completo'])) {
+            $errores['nombre_completo'] = 'El nombre completo es obligatorio';
         }
 
         if (empty($data['fecha_nac'])) {

@@ -19,7 +19,7 @@ class Estudiante_model extends CI_Model
     /**
      * Lista estudiantes con búsqueda y paginación.
      *
-     * @param string|null $search  Texto libre para buscar en nombres/apellidos/RUDE/CI
+     * @param string|null $search  Texto libre para buscar en nombre_completo/RUDE/CI
      * @param int|null    $cursoId Filtrar por curso
      * @param int         $page    Página actual
      * @param int         $limit   Resultados por página
@@ -37,10 +37,10 @@ class Estudiante_model extends CI_Model
         // Búsqueda por texto libre
         if (! empty($search)) {
             $this->db->group_start();
-            $this->db->like('e.nombres', $search);
-            $this->db->or_like('e.apellidos', $search);
+            $this->db->like('e.nombre_completo', $search);
             $this->db->or_like('e.rude', $search);
             $this->db->or_like('e.ci', $search);
+            $this->db->or_like('e.codigo_banco', $search);
             $this->db->group_end();
         }
 
@@ -49,8 +49,7 @@ class Estudiante_model extends CI_Model
             $this->db->where('ec.curso_id', $cursoId);
         }
 
-        $this->db->order_by('e.apellidos', 'ASC');
-        $this->db->order_by('e.nombres', 'ASC');
+        $this->db->order_by('e.nombre_completo', 'ASC');
         $this->db->limit($limit, $offset);
 
         $query = $this->db->get();
@@ -95,7 +94,7 @@ class Estudiante_model extends CI_Model
     public function crear(array $data): bool
     {
         // Campos permitidos para inserción
-        $campos = ['rude', 'ci', 'nombres', 'apellidos', 'fecha_nac', 'sexo', 'foto'];
+        $campos = ['rude', 'ci', 'nombre_completo', 'codigo_banco', 'fecha_nac', 'sexo', 'foto'];
         $insert = array_intersect_key($data, array_flip($campos));
 
         return $this->db->insert(self::TABLA, $insert);
@@ -107,7 +106,7 @@ class Estudiante_model extends CI_Model
     public function actualizar(string $rude, array $data): bool
     {
         // Campos permitidos para actualización
-        $campos  = ['ci', 'nombres', 'apellidos', 'fecha_nac', 'sexo', 'foto', 'activo'];
+        $campos  = ['ci', 'nombre_completo', 'codigo_banco', 'fecha_nac', 'sexo', 'foto', 'activo'];
         $update  = array_intersect_key($data, array_flip($campos));
 
         if (empty($update)) {
@@ -117,7 +116,6 @@ class Estudiante_model extends CI_Model
         $this->db->where('rude', $rude);
         return $this->db->update(self::TABLA, $update);
     }
-
     /**
      * Soft delete: desactiva un estudiante sin borrar sus datos.
      */

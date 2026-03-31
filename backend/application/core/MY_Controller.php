@@ -28,6 +28,9 @@ class MY_Controller extends CI_Controller
     {
         $this->output
             ->set_status_header($status)
+            ->set_header('Cache-Control: no-store, no-cache, must-revalidate, post-check=0, pre-check=0')
+            ->set_header('Pragma: no-cache')
+            ->set_header('Expires: Mon, 26 Jul 1997 05:00:00 GMT')
             ->set_content_type('application/json', 'utf-8')
             ->set_output(json_encode($data, JSON_UNESCAPED_UNICODE));
     }

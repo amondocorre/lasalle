@@ -21,6 +21,10 @@ $route['api/estudiantes/(:any)']['PUT']      = 'Estudiantes/update/$1';
 $route['api/estudiantes/(:any)']['DELETE']   = 'Estudiantes/destroy/$1';
 $route['api/estudiantes/(:any)/foto']['POST'] = 'Estudiantes/uploadFoto/$1';
 
+// ---- Consulta Pública ----
+$route['api/estudiantes_controller/consultar']['POST'] = 'Estudiantes_Controller/consultar';
+$route['api/estudiantes_controller/consultar']['OPTIONS'] = 'Estudiantes_Controller/consultar';
+
 // ---- Cursos ----
 $route['api/cursos']['GET']                  = 'Cursos/index';
 $route['api/cursos']['POST']                 = 'Cursos/store';

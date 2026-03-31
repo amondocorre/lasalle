@@ -8,7 +8,7 @@ class Retraso_model extends CI_Model {
     }
 
     public function listar($filtros = []) {
-        $this->db->select('r.*, e.nombres, e.apellidos, c.nombre as nombre_curso');
+        $this->db->select('r.*, e.nombre_completo, c.nombre as nombre_curso');
         $this->db->from('retrasos r');
         $this->db->join('estudiantes e', 'r.rude = e.rude');
         $this->db->join('cursos c', 'e.curso_id = c.id', 'left');

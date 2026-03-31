@@ -14,7 +14,7 @@ class Asistencia_model extends CI_Model
      */
     public function listar(?string $rude, ?int $cursoId, string $fecha): array
     {
-        $this->db->select('a.*, e.nombres, e.apellidos, e.ci, 
+        $this->db->select('a.*, e.nombre_completo, e.ci, 
                           COALESCE(m.nombre, h.materia) as materia, 
                           h.hora_inicio, h.hora_fin, 
                           c.nombre as nombre_curso, c.paralelo');
@@ -35,8 +35,7 @@ class Asistencia_model extends CI_Model
 
         $this->db->order_by('c.nombre', 'ASC');
         $this->db->order_by('c.paralelo', 'ASC');
-        $this->db->order_by('e.apellidos', 'ASC');
-        $this->db->order_by('e.nombres', 'ASC');
+        $this->db->order_by('e.nombre_completo', 'ASC');
         
         return $this->db->get()->result_array();
     }
@@ -75,8 +74,7 @@ class Asistencia_model extends CI_Model
     {
         $this->db->select('
             e.rude,
-            e.nombres,
-            e.apellidos,
+            e.nombre_completo,
             COUNT(CASE WHEN a.estado = "presente"  THEN 1 END) as presentes,
             COUNT(CASE WHEN a.estado = "ausente"   THEN 1 END) as ausentes,
             COUNT(CASE WHEN a.estado = "tardanza"  THEN 1 END) as tardanzas,
@@ -93,7 +91,7 @@ class Asistencia_model extends CI_Model
         }
 
         $this->db->group_by('e.rude');
-        $this->db->order_by('e.apellidos', 'ASC');
+        $this->db->order_by('e.nombre_completo', 'ASC');
         return $this->db->get()->result_array();
     }
 }

@@ -15,7 +15,7 @@ class Licencia_model extends CI_Model
      */
     public function listar(?string $rude, ?string $estado, ?string $fecha): array
     {
-        $this->db->select('l.*, e.nombres, e.apellidos, e.ci');
+        $this->db->select('l.*, e.nombre_completo, e.ci');
         $this->db->from(self::TABLA . ' l');
         $this->db->join('estudiantes e', 'e.rude = l.rude', 'left');
 
@@ -38,7 +38,7 @@ class Licencia_model extends CI_Model
      */
     public function obtenerConArchivos(int $id): ?array
     {
-        $this->db->select('l.*, e.nombres, e.apellidos, e.ci, e.foto');
+        $this->db->select('l.*, e.nombre_completo, e.ci, e.foto');
         $this->db->from(self::TABLA . ' l');
         $this->db->join('estudiantes e', 'e.rude = l.rude', 'left');
         $this->db->where('l.id', $id);
