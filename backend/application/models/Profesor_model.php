@@ -14,10 +14,12 @@ class Profesor_model extends CI_Model
      */
     public function listar(): array
     {
-        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, p.created_at, p.perfil_id, p.usuario_id, perf.nombre as nombre_perfil, u.username');
+        // Ajustamos la consulta: quitamos p.perfil_id porque no existe en producción
+        // y perfil_id se maneja desde la tabla de usuarios.
+        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, p.created_at, p.usuario_id, perf.nombre as nombre_perfil, u.username, u.perfil_id');
         $this->db->from('profesores p');
-        $this->db->join('perfiles perf', 'perf.id = p.perfil_id', 'left');
         $this->db->join('usuarios u', 'u.id = p.usuario_id', 'left');
+        $this->db->join('perfiles perf', 'perf.id = u.perfil_id', 'left');
         $this->db->order_by('p.nombre', 'ASC');
         
         $query = $this->db->get();
@@ -43,7 +45,7 @@ class Profesor_model extends CI_Model
      */
     public function obtener_por_id(int $id): ?array
     {
-        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, p.perfil_id, p.usuario_id, u.username');
+        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, p.usuario_id, u.username, u.perfil_id');
         $this->db->from('profesores p');
         $this->db->join('usuarios u', 'u.id = p.usuario_id', 'left');
         $this->db->where('p.id', $id);
