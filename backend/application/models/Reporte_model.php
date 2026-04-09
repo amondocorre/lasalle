@@ -155,29 +155,9 @@ class Reporte_model extends CI_Model
 
     public function get_acceso_padres_stats($gestion = null)
     {
-        // Limpiamos gestión para asegurar que sea numérico
-        $gestion_num = (int)$gestion;
-
-        // Versión ultra-compatible usando subconsultas directas
-        // Esto evita JOINs que duplican filas y GROUP BY que fallan en Strict Mode
-        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante");
-        
-        // Subconsulta para el nombre del curso actual
-        $this->db->select("(SELECT CONCAT(c2.nombre, ' ', c2.paralelo) 
-                            FROM estudiante_curso ec2 
-                            INNER JOIN cursos c2 ON c2.id = ec2.curso_id 
-                            WHERE ec2.rude = e.rude " . 
-                            ($gestion_num > 0 ? " AND c2.gestion = $gestion_num" : "") . 
-                            " LIMIT 1) as curso_nombre", FALSE);
-
-        // Subconsulta para contar accesos
-        $this->db->select("(SELECT COUNT(*) FROM log_acceso_padres WHERE ci_estudiante = e.ci) as total_accesos", FALSE);
-        
-        // Subconsulta para última fecha de acceso
-        $this->db->select("(SELECT MAX(fecha_acceso) FROM log_acceso_padres WHERE ci_estudiante = e.ci) as ultimo_acceso", FALSE);
-        
+        // Consulta ultra-básica para descartar problemas de entorno
+        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante, 'Cargando...' as curso_nombre, 0 as total_accesos, NULL as ultimo_acceso");
         $this->db->from('estudiantes e');
-        $this->db->order_by('total_accesos', 'DESC');
         $this->db->order_by('e.nombre_completo', 'ASC');
         
         return $this->db->get()->result_array();

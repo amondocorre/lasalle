@@ -98,9 +98,6 @@ class Reportes extends REST_Controller
 
     public function monitor_accesos_padres()
     {
-        // Forzamos el modo debug para ver el error real en producción
-        $this->db->db_debug = TRUE;
-        
         $gestion = $this->input->get('gestion') ?: date('Y');
         $datos = $this->Reporte_model->get_acceso_padres_stats($gestion);
         $this->success($datos);
