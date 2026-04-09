@@ -34,12 +34,15 @@ class Permisos_model extends CI_Model {
 
     public function obtenerMenus() {
         $this->db->order_by('orden', 'ASC');
-        return $this->db->get('menus')->result_array();
+        $query = $this->db->get('menus');
+        return $query ? $query->result_array() : [];
     }
 
     public function obtenerPermisosPorPerfil($perfil_id) {
         $this->db->where('perfil_id', $perfil_id);
-        $result = $this->db->get('perfil_menu')->result_array();
+        $query = $this->db->get('perfil_menu');
+        if (!$query) return [];
+        $result = $query->result_array();
         
         // Retornar un array directo de menu_ids para facilitar el frontend
         $menu_ids = [];
