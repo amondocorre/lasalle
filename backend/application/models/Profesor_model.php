@@ -44,7 +44,6 @@ class Profesor_model extends CI_Model
      */
     public function obtener_por_id(int $id): ?array
     {
-        // Obtenemos los datos base, trayendo el perfil y usuario vinculados
         $this->db->select('p.*, u.id as user_id, u.username, u.perfil_id, perf.nombre as nombre_perfil');
         $this->db->from('profesores p');
         $this->db->join('usuarios u', 'u.profesor_id = p.id', 'left');
@@ -53,6 +52,10 @@ class Profesor_model extends CI_Model
         $profesor = $this->db->get()->row_array();
 
         if ($profesor) {
+            // Si no tiene perfil_id (porque no tiene usuario), le ponemos 0 o null explícito 
+            // para que el frontend no se confunda
+            $profesor['perfil_id'] = $profesor['perfil_id'] ?? null;
+            $profesor['username'] = $profesor['username'] ?? '';
             // Materias: obtenemos solo los IDs para que el select múltiple del frontend los marque
             $this->db->select('materia_id');
             $this->db->where('profesor_id', $id);
