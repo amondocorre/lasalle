@@ -164,8 +164,7 @@ class Reporte_model extends CI_Model
         $this->db->join('estudiante_curso ec', 'ec.rude = e.rude', 'left');
         $this->db->join('cursos c', 'c.id = ec.curso_id', 'left');
         
-        // Forzamos el COLLATE en ambas columnas para evitar el error "Illegal mix of collations"
-        $join_cond = "lap.ci_estudiante COLLATE utf8mb4_unicode_ci = e.ci COLLATE utf8mb4_unicode_ci";
+        $join_cond = "lap.ci_estudiante = e.ci";
         if (!empty($gestion)) {
             $join_cond .= " AND YEAR(lap.fecha_acceso) = " . (int)$gestion;
         }
