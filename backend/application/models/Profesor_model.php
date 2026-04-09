@@ -44,25 +44,26 @@ class Profesor_model extends CI_Model
      */
     public function obtener_por_id(int $id): ?array
     {
-        // Obtenemos el ID del usuario también para poder actualizarlo luego si es necesario
-        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, u.id as user_id, u.username, u.perfil_id');
+        // Obtenemos los datos base, trayendo el perfil y usuario vinculados
+        $this->db->select('p.*, u.id as user_id, u.username, u.perfil_id, perf.nombre as nombre_perfil');
         $this->db->from('profesores p');
         $this->db->join('usuarios u', 'u.profesor_id = p.id', 'left');
+        $this->db->join('perfiles perf', 'perf.id = u.perfil_id', 'left');
         $this->db->where('p.id', $id);
         $profesor = $this->db->get()->row_array();
 
         if ($profesor) {
-            // Materias
+            // Materias: obtenemos solo los IDs para que el select múltiple del frontend los marque
             $this->db->select('materia_id');
             $this->db->where('profesor_id', $id);
             $mat = $this->db->get('profesor_materia')->result_array();
             $profesor['materias'] = array_column($mat, 'materia_id');
 
-            // Entrevistas
+            // Entrevistas: traemos el horario para padres
             $this->db->where('profesor_id', $id);
             $profesor['entrevistas'] = $this->db->get('profesor_entrevistas')->result_array();
 
-            // Carga Académica
+            // Carga Académica (Cursos asignados)
             $this->db->select('c.nombre as curso_nombre, c.paralelo, c.turno, m.nombre as materia_nombre');
             $this->db->from('asignaciones a');
             $this->db->join('cursos c', 'c.id = a.curso_id');
@@ -75,7 +76,7 @@ class Profesor_model extends CI_Model
 
     public function crear(array $data): int
     {
-        // 1. Insertar profesor primero (solo columnas existentes)
+        // 1. Insertar profesor (Datos básicos)
         $this->db->insert(self::TABLA, [
             'nombre'    => $data['nombre'],
             'telefono'  => $data['telefono'] ?? null,
@@ -84,26 +85,41 @@ class Profesor_model extends CI_Model
         ]);
         $id = $this->db->insert_id();
 
-        // 2. Si se envió info de usuario, crearlo vinculado a este profesor
+        // 2. Insertar Usuario si se proporcionó
         if (!empty($data['username']) && !empty($data['password'])) {
-            $user_data = [
+            $this->db->insert('usuarios', [
                 'username'    => $data['username'],
                 'password'    => password_hash($data['password'], PASSWORD_BCRYPT),
                 'nombre'      => $data['nombre'],
                 'perfil_id'   => $data['perfil_id'] ?? 3,
-                'profesor_id' => $id, // Relación correcta
+                'profesor_id' => $id,
                 'activo'      => 1
-            ];
-            $this->db->insert('usuarios', $user_data);
+            ]);
         }
 
-        // Materias vinculadas
+        // 3. Materias
         if (!empty($data['materias']) && is_array($data['materias'])) {
             $batch = [];
             foreach ($data['materias'] as $m_id) {
                 $batch[] = ['profesor_id' => $id, 'materia_id' => $m_id];
             }
             $this->db->insert_batch('profesor_materia', $batch);
+        }
+        
+        // 4. Entrevistas (Horarios de atención)
+        if (!empty($data['entrevistas']) && is_array($data['entrevistas'])) {
+            $batch_e = [];
+            foreach ($data['entrevistas'] as $e) {
+                if (!empty($e['dia']) && !empty($e['hora_inicio'])) {
+                    $batch_e[] = [
+                        'profesor_id' => $id,
+                        'dia'         => $e['dia'],
+                        'hora_inicio' => $e['hora_inicio'],
+                        'hora_fin'    => $e['hora_fin'] ?? '00:00:00'
+                    ];
+                }
+            }
+            if (!empty($batch_e)) $this->db->insert_batch('profesor_entrevistas', $batch_e);
         }
         
         return $id;
