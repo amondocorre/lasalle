@@ -23,12 +23,12 @@ class Profesor_model extends CI_Model
         $query = $this->db->get();
         if (!$query) {
             $error = $this->db->error();
-            // Retornamos una fila de diagnóstico para que el usuario vea el error en la tabla
+            // Retornamos el error detallado y la consulta que falló
             return [[
                 'id' => 0,
-                'nombre' => 'DB CONNECTION ERROR: ' . ($error['message'] ?? 'Check logs'),
-                'telefono' => 'N/A',
-                'direccion' => 'N/A',
+                'nombre' => 'SQL ERROR: ' . ($error['message'] ?? 'Unknown'),
+                'telefono' => 'DEBUG',
+                'direccion' => $this->db->last_query(),
                 'activo' => 0,
                 'nombre_perfil' => 'ERROR',
                 'username' => 'error'
