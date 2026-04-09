@@ -98,8 +98,14 @@ class Reportes extends REST_Controller
 
     public function monitor_accesos_padres()
     {
-        $gestion = $this->input->get('gestion') ?: date('Y');
-        $datos = $this->Reporte_model->get_acceso_padres_stats($gestion);
-        $this->success($datos);
+        try {
+            $gestion = $this->input->get('gestion') ?: date('Y');
+            $datos = $this->Reporte_model->get_acceso_padres_stats($gestion);
+            $this->success($datos);
+        } catch (\Exception $e) {
+            $this->error('Exception: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), 500);
+        } catch (\Error $e) {
+            $this->error('Error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), 500);
+        }
     }
 }
