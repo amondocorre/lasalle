@@ -55,6 +55,7 @@ $route['api/licencias/estudiante/(:any)']['GET'] = 'Licencias/porEstudiante/$1';
 
 // ---- Autenticación ----
 $route['api/auth/login']['POST']  = 'Auth/login';
+$route['api/auth/login/padre']['POST'] = 'Auth/login_padre';
 $route['api/auth/me']['GET']     = 'Auth/me';
 $route['api/auth/logout']['POST'] = 'Auth/logout';
 
@@ -95,5 +96,37 @@ $route['api/periodos/(:num)']['DELETE']        = 'Periodos/destroy/$1';
 $route['api/profesores']['GET']                = 'Profesores/index';
 $route['api/profesores']['POST']               = 'Profesores/store';
 $route['api/profesores/(:num)']['GET']         = 'Profesores/show/$1';
+$route['api/profesores/(:num)/materias']['GET'] = 'Profesores/materias/$1';
+$route['api/profesores/materia/(:num)']['GET'] = 'Profesores/por_materia/$1';
 $route['api/profesores/(:num)']['PUT']         = 'Profesores/update/$1';
 $route['api/profesores/(:num)']['DELETE']      = 'Profesores/destroy/$1';
+
+// ---- Novedades ----
+$route['api/novedades']['GET']                 = 'Novedades/index';
+$route['api/novedades']['POST']                = 'Novedades/store';
+$route['api/novedades/(:num)']['GET']          = 'Novedades/show/$1';
+$route['api/novedades/estudiante/(:any)']['GET'] = 'Novedades/estudiante/$1';
+$route['api/novedades/(:num)']['DELETE']       = 'Novedades/destroy/$1';
+
+$route['api/reportes/monitor_rendimiento']['GET'] = 'Reportes/monitor_rendimiento';
+$route['api/reportes/detalle_curso/(:num)']['GET'] = 'Reportes/detalle_curso/$1';
+$route['api/reportes/stats_dashboard']['GET'] = 'Reportes/stats_dashboard';
+$route['api/reportes/licencias_monitoreo']['GET'] = 'Reportes/licencias_monitoreo';
+$route['api/reportes/retrasos_stats']['GET'] = 'Reportes/retrasos_stats';
+$route['api/reportes/historial_retrasos/(:num)']['GET'] = 'Reportes/historial_retrasos/$1';
+$route['api/reportes/monitor_accesos_padres']['GET'] = 'Reportes/monitor_accesos_padres';
+
+$route['api/permisos/perfiles']['GET'] = 'Permisos/perfiles';
+$route['api/permisos/perfiles']['POST'] = 'Permisos/perfiles';
+$route['api/permisos/perfiles/(:num)']['PUT'] = 'Permisos/perfil/$1';
+$route['api/permisos/perfiles/(:num)']['DELETE'] = 'Permisos/perfil/$1';
+
+$route['api/permisos/menus']['GET'] = 'Permisos/menus';
+
+$route['api/permisos/asignar/(:num)']['GET'] = 'Permisos/asignar/$1';
+$route['api/permisos/asignar/(:num)']['POST'] = 'Permisos/asignar/$1';
+$route['api/permisos/asignar/(:num)']['PUT'] = 'Permisos/asignar/$1';
+
+$route['api/calendario']['GET']    = 'Calendario/index';
+$route['api/calendario']['POST']   = 'Calendario/save';
+$route['api/calendario/(:num)']['DELETE'] = 'Calendario/delete/$1';

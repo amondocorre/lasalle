@@ -54,6 +54,55 @@ class Auth extends REST_Controller {
     }
 
     /**
+     * POST /api/auth/login/padre
+     * Login simplificado para padres usando el CI del alumno.
+     */
+    public function login_padre() {
+        $data = $this->getJsonBody();
+        $ci   = $data['ci'] ?? '';
+
+        if (empty($ci)) {
+            $this->error('El CI del alumno es requerido', 400);
+            return;
+        }
+
+        $this->load->model('Estudiante_model');
+        $estudiante = $this->Estudiante_model->obtenerPorCI($ci);
+
+        if (!$estudiante) {
+            $this->error('CI no encontrado o alumno inactivo', 404);
+            return;
+        }
+
+        // Registrar log de acceso
+        $this->db->insert('log_acceso_padres', [
+            'ci_estudiante' => $estudiante['ci'],
+            'ip_address'    => $this->input->ip_address(),
+            'user_agent'    => $this->input->user_agent()
+        ]);
+
+        // Generamos un token temporal para el padre que incluya el CI
+        $token = 'PADRE-' . $estudiante['ci'] . '-' . bin2hex(random_bytes(16));
+        
+        $this->success([
+            'user' => [
+                'id'        => 'P-' . $estudiante['ci'],
+                'username'  => 'padre_' . $estudiante['ci'],
+                'nombre'    => 'Padre/Madre de ' . $estudiante['nombre_completo'],
+                'nombre_estudiante' => $estudiante['nombre_completo'],
+                'codigo_banco' => $estudiante['codigo_banco'],
+                'rude'      => $estudiante['rude'],
+                'ci_estudiante' => $estudiante['ci'],
+                'rol'       => 'padre',
+                'curso_id'  => $estudiante['curso_id'],
+                'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo']
+            ],
+            'token' => $token
+        ]);
+    }
+
+
+    /**
      * GET /api/auth/me
      * Verifica el token enviado en el header Authorization.
      */
@@ -68,6 +117,37 @@ class Auth extends REST_Controller {
         // Quitar 'Bearer ' si existe
         $token = str_replace('Bearer ', '', $token ?? '');
 
+        // CASO 1: Es un PADRE
+        if (strpos($token, 'PADRE-') === 0) {
+            $parts = explode('-', $token);
+            $ci = $parts[1] ?? '';
+            
+            $this->load->model('Estudiante_model');
+            $estudiante = $this->Estudiante_model->obtenerPorCI($ci);
+            
+            if (!$estudiante) {
+                $this->error('Sesión de padre inválida', 401);
+                return;
+            }
+
+            $this->success([
+                'user' => [
+                    'id'        => 'P-' . $estudiante['ci'],
+                    'username'  => 'padre_' . $estudiante['ci'],
+                    'nombre'    => 'Padre/Madre de ' . $estudiante['nombre_completo'],
+                    'nombre_estudiante' => $estudiante['nombre_completo'],
+                    'codigo_banco' => $estudiante['codigo_banco'],
+                    'rude'      => $estudiante['rude'],
+                    'ci_estudiante' => $estudiante['ci'],
+                    'rol'       => 'padre',
+                    'curso_id'  => $estudiante['curso_id'],
+                    'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo']
+                ]
+            ]);
+            return;
+        }
+
+        // CASO 2: Es un USUARIO normal (Admin/Regente/Profe)
         $user = $this->Usuario_model->find_by_token($token);
 
         if (!$user) {
@@ -97,6 +177,12 @@ class Auth extends REST_Controller {
         }
 
         $token = str_replace('Bearer ', '', $token ?? '');
+
+        // Si es padre no hay nada que borrar en DB
+        if (strpos($token, 'PADRE-') === 0) {
+            $this->success(['message' => 'Sesión cerrada correctamente']);
+            return;
+        }
 
         $user = $this->Usuario_model->find_by_token($token);
         if ($user) {

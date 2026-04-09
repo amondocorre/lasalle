@@ -10,12 +10,16 @@ class Profesor_model extends CI_Model
     private const TABLA = 'profesores';
 
     /**
-     * Lista todos los profesores.
+     * Lista todos los profesores con su perfil.
      */
     public function listar(): array
     {
-        $this->db->order_by('nombre', 'ASC');
-        return $this->db->get(self::TABLA)->result_array();
+        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, p.created_at, p.perfil_id, p.usuario_id, perf.nombre as nombre_perfil, u.username');
+        $this->db->from('profesores p');
+        $this->db->join('perfiles perf', 'perf.id = p.perfil_id', 'left');
+        $this->db->join('usuarios u', 'u.id = p.usuario_id', 'left');
+        $this->db->order_by('p.nombre', 'ASC');
+        return $this->db->get()->result_array();
     }
 
     /**
@@ -23,21 +27,90 @@ class Profesor_model extends CI_Model
      */
     public function obtener_por_id(int $id): ?array
     {
-        return $this->db->get_where(self::TABLA, ['id' => $id])->row_array();
+        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, p.perfil_id, p.usuario_id, u.username');
+        $this->db->from('profesores p');
+        $this->db->join('usuarios u', 'u.id = p.usuario_id', 'left');
+        $this->db->where('p.id', $id);
+        $profesor = $this->db->get()->row_array();
+
+        if ($profesor) {
+            // Materias
+            $this->db->select('materia_id');
+            $this->db->where('profesor_id', $id);
+            $mat = $this->db->get('profesor_materia')->result_array();
+            $profesor['materias'] = array_column($mat, 'materia_id');
+
+            // Entrevistas
+            $this->db->where('profesor_id', $id);
+            $profesor['entrevistas'] = $this->db->get('profesor_entrevistas')->result_array();
+
+            // Cursos y Materias Asignadas (Carga Académica)
+            $this->db->select('c.nombre as curso_nombre, c.paralelo, c.turno, m.nombre as materia_nombre');
+            $this->db->from('asignaciones a');
+            $this->db->join('cursos c', 'c.id = a.curso_id');
+            $this->db->join('materias m', 'm.id = a.materia_id');
+            $this->db->where('a.profesor_id', $id);
+            $profesor['asignaciones'] = $this->db->get()->result_array();
+        }
+        return $profesor;
     }
 
     /**
-     * Crea un nuevo profesor.
+     * Crea un nuevo profesor/personal y su usuario si corresponde.
      */
     public function crear(array $data): int
     {
+        $usuario_id = null;
+
+        // Si se envió información para crear usuario
+        if (!empty($data['username']) && !empty($data['password'])) {
+            $user_data = [
+                'username' => $data['username'],
+                'password' => password_hash($data['password'], PASSWORD_BCRYPT),
+                'nombre'   => $data['nombre'],
+                'perfil_id'=> $data['perfil_id'] ?? 3, // Default profesor if none
+                'activo'   => 1
+            ];
+            $this->db->insert('usuarios', $user_data);
+            $usuario_id = $this->db->insert_id();
+        }
+
         $this->db->insert(self::TABLA, [
             'nombre'    => $data['nombre'],
             'telefono'  => $data['telefono'] ?? null,
             'direccion' => $data['direccion'] ?? null,
+            'perfil_id' => $data['perfil_id'] ?? null,
+            'usuario_id'=> $usuario_id,
             'activo'    => 1
         ]);
-        return $this->db->insert_id();
+        $id = $this->db->insert_id();
+        
+        // Solo si es perfil profesor o tiene materias
+        if (!empty($data['materias']) && is_array($data['materias'])) {
+            $batch = [];
+            foreach ($data['materias'] as $m_id) {
+                $batch[] = ['profesor_id' => $id, 'materia_id' => $m_id];
+            }
+            $this->db->insert_batch('profesor_materia', $batch);
+        }
+        
+        // Entrevistas
+        if (!empty($data['entrevistas']) && is_array($data['entrevistas'])) {
+            $batch_e = [];
+            foreach ($data['entrevistas'] as $e) {
+                if (!empty($e['dia']) && !empty($e['hora_inicio'])) {
+                    $batch_e[] = [
+                        'profesor_id' => $id,
+                        'dia'         => $e['dia'],
+                        'hora_inicio' => $e['hora_inicio'],
+                        'hora_fin'    => $e['hora_fin'] ?? '00:00:00'
+                    ];
+                }
+            }
+            if (!empty($batch_e)) $this->db->insert_batch('profesor_entrevistas', $batch_e);
+        }
+        
+        return $id;
     }
 
     /**
@@ -45,11 +118,62 @@ class Profesor_model extends CI_Model
      */
     public function actualizar(int $id, array $data): bool
     {
-        $campos = ['nombre', 'telefono', 'direccion', 'activo'];
+        $campos = ['nombre', 'telefono', 'direccion', 'activo', 'perfil_id'];
         $update = array_intersect_key($data, array_flip($campos));
         
+        // Si el profesor ya tiene usuario y se envió password nuevo
+        $prof = $this->obtener_por_id($id);
+        if ($prof['usuario_id'] && !empty($data['password'])) {
+            $this->db->where('id', $prof['usuario_id']);
+            $this->db->update('usuarios', [
+                'password' => password_hash($data['password'], PASSWORD_BCRYPT)
+            ]);
+        } 
+        // Si no tiene usuario y se envió datos para crearlo
+        else if (!$prof['usuario_id'] && !empty($data['username']) && !empty($data['password'])) {
+            $user_data = [
+                'username' => $data['username'],
+                'password' => password_hash($data['password'], PASSWORD_BCRYPT),
+                'nombre'   => $data['nombre'],
+                'perfil_id'=> $data['perfil_id'] ?? 3,
+                'activo'   => 1
+            ];
+            $this->db->insert('usuarios', $user_data);
+            $update['usuario_id'] = $this->db->insert_id();
+        }
+
         $this->db->where('id', $id);
-        return $this->db->update(self::TABLA, $update);
+        $res = $this->db->update(self::TABLA, $update);
+        
+        if (isset($data['materias']) && is_array($data['materias'])) {
+            $this->db->delete('profesor_materia', ['profesor_id' => $id]);
+            if (!empty($data['materias'])) {
+                $batch = [];
+                foreach ($data['materias'] as $m_id) {
+                    $batch[] = ['profesor_id' => $id, 'materia_id' => $m_id];
+                }
+                $this->db->insert_batch('profesor_materia', $batch);
+            }
+        }
+
+        // Entrevistas
+        if (isset($data['entrevistas']) && is_array($data['entrevistas'])) {
+            $this->db->delete('profesor_entrevistas', ['profesor_id' => $id]);
+            $batch_e = [];
+            foreach ($data['entrevistas'] as $e) {
+                if (!empty($e['dia']) && !empty($e['hora_inicio'])) {
+                    $batch_e[] = [
+                        'profesor_id' => $id,
+                        'dia'         => $e['dia'],
+                        'hora_inicio' => $e['hora_inicio'],
+                        'hora_fin'    => $e['hora_fin'] ?? '00:00:00'
+                    ];
+                }
+            }
+            if (!empty($batch_e)) $this->db->insert_batch('profesor_entrevistas', $batch_e);
+        }
+        
+        return $res;
     }
 
     /**

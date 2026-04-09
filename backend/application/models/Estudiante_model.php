@@ -105,6 +105,24 @@ class Estudiante_model extends CI_Model
 
         return $result ?: null;
     }
+    /**
+     * Obtiene un estudiante por su CI, incluyendo los datos de su curso.
+     */
+    public function obtenerPorCI(string $ci): ?array
+    {
+        $this->db->select('e.*, c.id as curso_id, c.nombre as nombre_curso, c.turno, c.paralelo, c.nivel');
+        $this->db->from(self::TABLA . ' e');
+        $this->db->join('estudiante_curso ec', 'ec.rude = e.rude', 'left');
+        $this->db->join('cursos c', 'c.id = ec.curso_id', 'left');
+        $this->db->where('e.ci', $ci);
+        $this->db->where('e.activo', 1);
+        $this->db->limit(1);
+
+        $query  = $this->db->get();
+        $result = $query->row_array();
+
+        return $result ?: null;
+    }
 
     /**
      * Verifica si un CI ya está registrado.

@@ -15,6 +15,7 @@ class Horario_model extends CI_Model
         $this->db->select('h.*, c.nombre as nombre_curso, 
                           COALESCE(m.nombre, h.materia) as materia, 
                           COALESCE(p.nombre, p2.nombre) as nombre_profesor,
+                          COALESCE(a.profesor_id, h.profesor_id) as profesor_id,
                           COALESCE(a.color, h.color) as color');
         $this->db->from(self::TABLA . ' h');
         $this->db->join('cursos c', 'c.id = h.curso_id', 'left');

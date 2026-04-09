@@ -36,6 +36,36 @@ class Profesores extends REST_Controller
     }
 
     /**
+     * GET /api/profesores/(:num)/materias
+     */
+    public function materias(int $id): void
+    {
+        $this->db->select('m.id, m.nombre');
+        $this->db->from('profesor_materia pm');
+        $this->db->join('materias m', 'm.id = pm.materia_id');
+        $this->db->where('pm.profesor_id', $id);
+        $this->db->group_by('m.id');
+        $materias = $this->db->get()->result();
+        
+        $this->success($materias);
+    }
+    /**
+     * GET /api/profesores/materia/(:num)
+     */
+    public function por_materia(int $id): void
+    {
+        $this->db->select('p.id, p.nombre');
+        $this->db->from('profesores p');
+        $this->db->join('profesor_materia pm', 'pm.profesor_id = p.id');
+        $this->db->where('pm.materia_id', $id);
+        $this->db->where('p.activo', 1);
+        $this->db->order_by('p.nombre', 'ASC');
+        $profesores = $this->db->get()->result();
+        
+        $this->success($profesores);
+    }
+
+    /**
      * POST /api/profesores
      */
     public function store(): void
