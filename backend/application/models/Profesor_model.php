@@ -19,7 +19,23 @@ class Profesor_model extends CI_Model
         $this->db->join('perfiles perf', 'perf.id = p.perfil_id', 'left');
         $this->db->join('usuarios u', 'u.id = p.usuario_id', 'left');
         $this->db->order_by('p.nombre', 'ASC');
-        return $this->db->get()->result_array();
+        
+        $query = $this->db->get();
+        if (!$query) {
+            $error = $this->db->error();
+            // Retornamos una fila de diagnóstico para que el usuario vea el error en la tabla
+            return [[
+                'id' => 0,
+                'nombre' => 'DB CONNECTION ERROR: ' . ($error['message'] ?? 'Check logs'),
+                'telefono' => 'N/A',
+                'direccion' => 'N/A',
+                'activo' => 0,
+                'nombre_perfil' => 'ERROR',
+                'username' => 'error'
+            ]];
+        }
+        
+        return $query->result_array();
     }
 
     /**
