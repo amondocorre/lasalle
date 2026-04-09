@@ -5,6 +5,7 @@ require_once APPPATH . 'core/MY_Controller.php';
 
 /**
  * Controlador de Autenticación (API REST)
+ * 
  */
 class Auth extends REST_Controller {
 
