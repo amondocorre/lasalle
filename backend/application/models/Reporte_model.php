@@ -156,10 +156,17 @@ class Reporte_model extends CI_Model
     public function get_acceso_padres_stats($gestion = null)
     {
         // Consulta ultra-básica para descartar problemas de entorno
-        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante, 'Cargando...' as curso_nombre, 0 as total_accesos, NULL as ultimo_acceso");
+        // ALERTA: Se agregó FALSE al final del select para evitar que CodeIgniter intente "escapar" los literales y arroje un error en producción.
+        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante, 'Cargando...' as curso_nombre, 0 as total_accesos, NULL as ultimo_acceso", FALSE);
         $this->db->from('estudiantes e');
         $this->db->order_by('e.nombre_completo', 'ASC');
         
-        return $this->db->get()->result_array();
+        $query = $this->db->get();
+        if (!$query) {
+            // Manejamos el retorno en false para no lanzar TypeError en result_array()
+            return [];
+        }
+        
+        return $query->result_array();
     }
 }
