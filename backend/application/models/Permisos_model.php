@@ -35,15 +35,7 @@ class Permisos_model extends CI_Model {
     public function obtenerMenus() {
         $this->db->order_by('orden', 'ASC');
         $query = $this->db->get('menus');
-        if (!$query) {
-            $error = $this->db->error();
-            return [[
-                'id' => 0,
-                'label' => 'SQL ERROR: ' . ($error['message'] ?? 'Unknown'),
-                'path' => $this->db->last_query()
-            ]];
-        }
-        return $query->result_array();
+        return $query ? $query->result_array() : [];
     }
 
     public function obtenerPermisosPorPerfil($perfil_id) {
