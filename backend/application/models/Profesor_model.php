@@ -44,7 +44,8 @@ class Profesor_model extends CI_Model
      */
     public function obtener_por_id(int $id): ?array
     {
-        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, u.username, u.perfil_id');
+        // Obtenemos el ID del usuario también para poder actualizarlo luego si es necesario
+        $this->db->select('p.id, p.nombre, p.telefono, p.direccion, p.activo, u.id as user_id, u.username, u.perfil_id');
         $this->db->from('profesores p');
         $this->db->join('usuarios u', 'u.profesor_id = p.id', 'left');
         $this->db->where('p.id', $id);
@@ -61,7 +62,7 @@ class Profesor_model extends CI_Model
             $this->db->where('profesor_id', $id);
             $profesor['entrevistas'] = $this->db->get('profesor_entrevistas')->result_array();
 
-            // Cursos y Materias Asignadas (Carga Académica)
+            // Carga Académica
             $this->db->select('c.nombre as curso_nombre, c.paralelo, c.turno, m.nombre as materia_nombre');
             $this->db->from('asignaciones a');
             $this->db->join('cursos c', 'c.id = a.curso_id');
@@ -72,37 +73,31 @@ class Profesor_model extends CI_Model
         return $profesor;
     }
 
-    /**
-     * Crea un nuevo profesor/personal y su usuario si corresponde.
-     */
     public function crear(array $data): int
     {
-        $usuario_id = null;
-
-        // Si se envió información para crear usuario
-        if (!empty($data['username']) && !empty($data['password'])) {
-            $user_data = [
-                'username' => $data['username'],
-                'password' => password_hash($data['password'], PASSWORD_BCRYPT),
-                'nombre'   => $data['nombre'],
-                'perfil_id'=> $data['perfil_id'] ?? 3, // Default profesor if none
-                'activo'   => 1
-            ];
-            $this->db->insert('usuarios', $user_data);
-            $usuario_id = $this->db->insert_id();
-        }
-
+        // 1. Insertar profesor primero (solo columnas existentes)
         $this->db->insert(self::TABLA, [
             'nombre'    => $data['nombre'],
             'telefono'  => $data['telefono'] ?? null,
             'direccion' => $data['direccion'] ?? null,
-            'perfil_id' => $data['perfil_id'] ?? null,
-            'usuario_id'=> $usuario_id,
             'activo'    => 1
         ]);
         $id = $this->db->insert_id();
-        
-        // Solo si es perfil profesor o tiene materias
+
+        // 2. Si se envió info de usuario, crearlo vinculado a este profesor
+        if (!empty($data['username']) && !empty($data['password'])) {
+            $user_data = [
+                'username'    => $data['username'],
+                'password'    => password_hash($data['password'], PASSWORD_BCRYPT),
+                'nombre'      => $data['nombre'],
+                'perfil_id'   => $data['perfil_id'] ?? 3,
+                'profesor_id' => $id, // Relación correcta
+                'activo'      => 1
+            ];
+            $this->db->insert('usuarios', $user_data);
+        }
+
+        // Materias vinculadas
         if (!empty($data['materias']) && is_array($data['materias'])) {
             $batch = [];
             foreach ($data['materias'] as $m_id) {
@@ -111,52 +106,40 @@ class Profesor_model extends CI_Model
             $this->db->insert_batch('profesor_materia', $batch);
         }
         
-        // Entrevistas
-        if (!empty($data['entrevistas']) && is_array($data['entrevistas'])) {
-            $batch_e = [];
-            foreach ($data['entrevistas'] as $e) {
-                if (!empty($e['dia']) && !empty($e['hora_inicio'])) {
-                    $batch_e[] = [
-                        'profesor_id' => $id,
-                        'dia'         => $e['dia'],
-                        'hora_inicio' => $e['hora_inicio'],
-                        'hora_fin'    => $e['hora_fin'] ?? '00:00:00'
-                    ];
-                }
-            }
-            if (!empty($batch_e)) $this->db->insert_batch('profesor_entrevistas', $batch_e);
-        }
-        
         return $id;
     }
 
-    /**
-     * Actualiza los datos de un profesor.
-     */
     public function actualizar(int $id, array $data): bool
     {
-        $campos = ['nombre', 'telefono', 'direccion', 'activo', 'perfil_id'];
+        $campos = ['nombre', 'telefono', 'direccion', 'activo']; // perfil_id NO va aquí
         $update = array_intersect_key($data, array_flip($campos));
         
-        // Si el profesor ya tiene usuario y se envió password nuevo
         $prof = $this->obtener_por_id($id);
-        if ($prof['usuario_id'] && !empty($data['password'])) {
-            $this->db->where('id', $prof['usuario_id']);
-            $this->db->update('usuarios', [
-                'password' => password_hash($data['password'], PASSWORD_BCRYPT)
-            ]);
+        
+        // Actualizar datos del usuario asociado si existen cambios
+        if (!empty($prof['user_id'])) {
+            $user_update = [];
+            if (!empty($data['password'])) {
+                $user_update['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
+            }
+            if (isset($data['perfil_id'])) {
+                $user_update['perfil_id'] = $data['perfil_id'];
+            }
+            if (!empty($user_update)) {
+                $this->db->where('id', $prof['user_id']);
+                $this->db->update('usuarios', $user_update);
+            }
         } 
-        // Si no tiene usuario y se envió datos para crearlo
-        else if (!$prof['usuario_id'] && !empty($data['username']) && !empty($data['password'])) {
-            $user_data = [
-                'username' => $data['username'],
-                'password' => password_hash($data['password'], PASSWORD_BCRYPT),
-                'nombre'   => $data['nombre'],
-                'perfil_id'=> $data['perfil_id'] ?? 3,
-                'activo'   => 1
-            ];
-            $this->db->insert('usuarios', $user_data);
-            $update['usuario_id'] = $this->db->insert_id();
+        // Si no tiene usuario pero mandaron datos ahora para crearlo
+        else if (!empty($data['username']) && !empty($data['password'])) {
+            $this->db->insert('usuarios', [
+                'username'    => $data['username'],
+                'password'    => password_hash($data['password'], PASSWORD_BCRYPT),
+                'nombre'      => $data['nombre'] ?? $prof['nombre'],
+                'perfil_id'   => $data['perfil_id'] ?? 3,
+                'profesor_id' => $id,
+                'activo'      => 1
+            ]);
         }
 
         $this->db->where('id', $id);
