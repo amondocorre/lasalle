@@ -155,10 +155,23 @@ class Reporte_model extends CI_Model
 
     public function get_acceso_padres_stats($gestion = null)
     {
-        // Consulta ultra-básica para descartar problemas de entorno
-        // ALERTA: Se agregó FALSE al final del select para evitar que CodeIgniter intente "escapar" los literales y arroje un error en producción.
-        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante, 'Cargando...' as curso_nombre, 0 as total_accesos, NULL as ultimo_acceso", FALSE);
+        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante");
+        $this->db->select("CONCAT(c.nombre, ' ', c.paralelo) as curso_nombre", FALSE);
+        $this->db->select("COUNT(lap.id) as total_accesos", FALSE);
+        $this->db->select("MAX(lap.fecha_acceso) as ultimo_acceso", FALSE);
+        
         $this->db->from('estudiantes e');
+        $this->db->join('estudiante_curso ec', 'ec.rude = e.rude', 'left');
+        $this->db->join('cursos c', 'c.id = ec.curso_id', 'left');
+        
+        $join_cond = "lap.ci_estudiante = e.ci";
+        if (!empty($gestion)) {
+            $join_cond .= " AND YEAR(lap.fecha_acceso) = " . (int)$gestion;
+        }
+        $this->db->join('log_acceso_padres lap', $join_cond, 'left');
+        
+        $this->db->group_by(['e.ci', 'e.nombre_completo', 'c.id', 'c.nombre', 'c.paralelo']);
+        $this->db->order_by('total_accesos', 'DESC');
         $this->db->order_by('e.nombre_completo', 'ASC');
         
         $query = $this->db->get();
