@@ -130,16 +130,20 @@ class Profesor_model extends CI_Model
 
     public function actualizar(int $id, array $data): bool
     {
-        $campos = ['nombre', 'telefono', 'direccion', 'activo']; // perfil_id NO va aquí
+        $campos = ['nombre', 'telefono', 'direccion', 'activo'];
         $update = array_intersect_key($data, array_flip($campos));
         
         $prof = $this->obtener_por_id($id);
         
-        // Actualizar datos del usuario asociado si existen cambios
+        // 1. Manejo del Usuario asociado
         if (!empty($prof['user_id'])) {
+            // Si ya tiene usuario, actualizamos lo que haya cambiado
             $user_update = [];
             if (!empty($data['password'])) {
                 $user_update['password'] = password_hash($data['password'], PASSWORD_BCRYPT);
+            }
+            if (!empty($data['username'])) {
+                $user_update['username'] = $data['username'];
             }
             if (isset($data['perfil_id'])) {
                 $user_update['perfil_id'] = $data['perfil_id'];
@@ -149,11 +153,11 @@ class Profesor_model extends CI_Model
                 $this->db->update('usuarios', $user_update);
             }
         } 
-        // Si no tiene usuario pero mandaron datos ahora para crearlo
-        else if (!empty($data['username']) && !empty($data['password'])) {
+        // 2. Si NO tiene usuario, pero se envió nombre de usuario AHORA
+        else if (!empty($data['username'])) {
             $this->db->insert('usuarios', [
                 'username'    => $data['username'],
-                'password'    => password_hash($data['password'], PASSWORD_BCRYPT),
+                'password'    => password_hash($data['password'] ?? '123456', PASSWORD_BCRYPT),
                 'nombre'      => $data['nombre'] ?? $prof['nombre'],
                 'perfil_id'   => $data['perfil_id'] ?? 3,
                 'profesor_id' => $id,
