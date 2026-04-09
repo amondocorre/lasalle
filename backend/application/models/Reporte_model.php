@@ -155,21 +155,28 @@ class Reporte_model extends CI_Model
 
     public function get_acceso_padres_stats($gestion = null)
     {
-        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante, COALESCE(CONCAT(c.nombre, ' ', c.paralelo), 'Sin Curso') as curso_nombre");
-        $this->db->select("COUNT(l.id) as total_accesos", FALSE);
-        $this->db->select("MAX(l.fecha_acceso) as ultimo_acceso");
-        $this->db->from('estudiantes e');
-        $this->db->join('log_acceso_padres l', 'l.ci_estudiante = e.ci', 'left');
-        
-        $this->db->join('estudiante_curso ec', 'ec.rude = e.rude', 'left');
-        
-        $join_curso = 'c.id = ec.curso_id';
-        if (!empty($gestion)) {
-            $join_curso .= ' AND c.gestion = ' . $this->db->escape($gestion);
-        }
-        $this->db->join('cursos c', $join_curso, 'left');
+        // Limpiamos gestión para asegurar que sea numérico
+        $gestion_num = (int)$gestion;
 
-        $this->db->group_by(['e.ci', 'e.nombre_completo', 'c.nombre', 'c.paralelo']);
+        // Versión ultra-compatible usando subconsultas directas
+        // Esto evita JOINs que duplican filas y GROUP BY que fallan en Strict Mode
+        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante");
+        
+        // Subconsulta para el nombre del curso actual
+        $this->db->select("(SELECT CONCAT(c2.nombre, ' ', c2.paralelo) 
+                            FROM estudiante_curso ec2 
+                            INNER JOIN cursos c2 ON c2.id = ec2.curso_id 
+                            WHERE ec2.rude = e.rude " . 
+                            ($gestion_num > 0 ? " AND c2.gestion = $gestion_num" : "") . 
+                            " LIMIT 1) as curso_nombre", FALSE);
+
+        // Subconsulta para contar accesos
+        $this->db->select("(SELECT COUNT(*) FROM log_acceso_padres WHERE ci_estudiante = e.ci) as total_accesos", FALSE);
+        
+        // Subconsulta para última fecha de acceso
+        $this->db->select("(SELECT MAX(fecha_acceso) FROM log_acceso_padres WHERE ci_estudiante = e.ci) as ultimo_acceso", FALSE);
+        
+        $this->db->from('estudiantes e');
         $this->db->order_by('total_accesos', 'DESC');
         $this->db->order_by('e.nombre_completo', 'ASC');
         
