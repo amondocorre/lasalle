@@ -155,7 +155,7 @@ class Reporte_model extends CI_Model
 
     public function get_acceso_padres_stats($gestion = null)
     {
-        $this->db->select("e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante");
+        $this->db->select("e.rude, e.ci as ci_estudiante, e.nombre_completo as nombre_estudiante");
         $this->db->select("CONCAT(c.nombre, ' ', c.paralelo) as curso_nombre", FALSE);
         $this->db->select("COUNT(lap.id) as total_accesos", FALSE);
         $this->db->select("MAX(lap.fecha_acceso) as ultimo_acceso", FALSE);
@@ -170,14 +170,19 @@ class Reporte_model extends CI_Model
         }
         $this->db->join('log_acceso_padres lap', $join_cond, 'left');
         
-        $this->db->group_by(['e.ci', 'e.nombre_completo', 'c.id', 'c.nombre', 'c.paralelo']);
+        $this->db->group_by(['e.rude', 'e.ci', 'e.nombre_completo', 'c.id', 'c.nombre', 'c.paralelo']);
         $this->db->order_by('total_accesos', 'DESC');
         $this->db->order_by('e.nombre_completo', 'ASC');
-        
         $query = $this->db->get();
         if (!$query) {
-            // Manejamos el retorno en false para no lanzar TypeError en result_array()
-            return [];
+            $error = $this->db->error();
+            return [[
+                'ci_estudiante' => 'ERROR',
+                'nombre_estudiante' => 'DB ERROR: ' . ($error['message'] ?? 'Desconocido'),
+                'curso_nombre' => 'SQL Error',
+                'total_accesos' => 0,
+                'ultimo_acceso' => null
+            ]];
         }
         
         return $query->result_array();
