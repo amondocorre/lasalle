@@ -1,0 +1,7 @@
+SELECT `e`.`ci` as `ci_estudiante`, `e`.`nombre_completo` as `nombre_estudiante`, CONCAT(c.nombre, ' ', c.paralelo) as curso_nombre, COUNT(lap.id) as total_accesos, MAX(lap.fecha_acceso) as ultimo_acceso
+FROM `estudiantes` `e`
+LEFT JOIN `estudiante_curso` `ec` ON `ec`.`rude` = `e`.`rude`
+LEFT JOIN `cursos` `c` ON `c`.`id` = `ec`.`curso_id`
+LEFT JOIN `log_acceso_padres` `lap` ON `lap`.`ci_estudiante` = `e`.`ci` AND YEAR(lap.fecha_acceso) = 2026
+GROUP BY `e`.`ci`, `e`.`nombre_completo`, `c`.`id`, `c`.`nombre`, `c`.`paralelo`
+ORDER BY `total_accesos` DESC, `e`.`nombre_completo` ASC
