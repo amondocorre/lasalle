@@ -97,16 +97,14 @@ class Auth extends REST_Controller {
                 'username'  => 'padre_' . $estudiante['ci'],
                 'nombre'    => 'Padre/Madre de ' . $estudiante['nombre_completo'],
                 'nombre_estudiante' => $estudiante['nombre_completo'],
+                'perfil_id' => 6,
                 'codigo_banco' => $estudiante['codigo_banco'],
                 'rude'      => $estudiante['rude'],
                 'ci_estudiante' => $estudiante['ci'],
                 'rol'       => 'padre',
                 'curso_id'  => $estudiante['curso_id'],
                 'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo'],
-                'navigation' => [
-                    ['id' => 99, 'label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'LayoutDashboard'],
-                    ['id' => 100, 'label' => 'Calendario', 'path' => '/calendario', 'icon' => 'CalendarRange']
-                ]
+                'navigation' => $this->Permisos_model->obtenerMenusUsuario(6)
             ],
             'token' => $token
         ]);
@@ -147,16 +145,14 @@ class Auth extends REST_Controller {
                     'username'  => 'padre_' . $estudiante['ci'],
                     'nombre'    => 'Padre/Madre de ' . $estudiante['nombre_completo'],
                     'nombre_estudiante' => $estudiante['nombre_completo'],
+                    'perfil_id' => 6,
                     'codigo_banco' => $estudiante['codigo_banco'],
                     'rude'      => $estudiante['rude'],
                     'ci_estudiante' => $estudiante['ci'],
                     'rol'       => 'padre',
                     'curso_id'  => $estudiante['curso_id'],
                     'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo'],
-                    'navigation' => [
-                        ['id' => 99, 'label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'LayoutDashboard'],
-                        ['id' => 100, 'label' => 'Calendario', 'path' => '/calendario', 'icon' => 'CalendarRange']
-                    ]
+                    'navigation' => $this->Permisos_model->obtenerMenusUsuario(6)
                 ]
             ]);
             return;
