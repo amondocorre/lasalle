@@ -55,20 +55,27 @@ class Permisos_model extends CI_Model {
     public function actualizarPermisos($perfil_id, $menu_ids) {
         $this->db->trans_start();
 
-        // Eliminar permisos actuales
+        // 1. Eliminar TODOS los permisos actuales para este perfil específico
         $this->db->where('perfil_id', $perfil_id);
         $this->db->delete('perfil_menu');
 
-        // Insertar nuevos permisos
+        // 2. Insertar los nuevos permisos seleccionados
         if (!empty($menu_ids) && is_array($menu_ids)) {
-            $data = [];
+            $batch_data = [];
             foreach ($menu_ids as $m_id) {
-                $data[] = [
-                    'perfil_id' => $perfil_id,
-                    'menu_id' => $m_id
-                ];
+                // Aseguramos que el ID del menú sea válido
+                if (!empty($m_id)) {
+                    $batch_data[] = [
+                        'perfil_id' => $perfil_id,
+                        'menu_id' => $m_id,
+                        'acceso_lectura' => 1,
+                        'acceso_escritura' => 1
+                    ];
+                }
             }
-            $this->db->insert_batch('perfil_menu', $data);
+            if (!empty($batch_data)) {
+                $this->db->insert_batch('perfil_menu', $batch_data);
+            }
         }
 
         $this->db->trans_complete();
