@@ -90,12 +90,14 @@ class Profesor_model extends CI_Model
 
         // 2. Insertar Usuario si se proporcionó
         if (!empty($data['username']) && !empty($data['password'])) {
+            $perfil_id = $data['perfil_id'] ?? 2; // Default Profesor
             $this->db->insert('usuarios', [
                 'username'    => $data['username'],
                 'password'    => password_hash($data['password'], PASSWORD_BCRYPT),
                 'nombre'      => $data['nombre'],
-                'perfil_id'   => $data['perfil_id'] ?? 3,
+                'perfil_id'   => $perfil_id,
                 'profesor_id' => $id,
+                'rol'         => ($perfil_id == 1) ? 'admin' : ($perfil_id == 2 ? 'profesor' : 'regente'),
                 'activo'      => 1
             ]);
         }
@@ -147,6 +149,7 @@ class Profesor_model extends CI_Model
             }
             if (isset($data['perfil_id'])) {
                 $user_update['perfil_id'] = $data['perfil_id'];
+                $user_update['rol'] = ($data['perfil_id'] == 1) ? 'admin' : ($data['perfil_id'] == 2 ? 'profesor' : 'regente');
             }
             if (!empty($user_update)) {
                 $this->db->where('id', $prof['user_id']);
