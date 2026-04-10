@@ -38,6 +38,10 @@ class Auth extends REST_Controller {
         // Generar un token simple (en producción usar JWT)
         $token = bin2hex(random_bytes(32));
         
+        // Cargar modelo de permisos para obtener el menú dinámico
+        $this->load->model('Permisos_model');
+        $menus = $this->Permisos_model->obtenerMenusUsuario($user->perfil_id);
+        
         if ($this->Usuario_model->set_token($user->id, $token)) {
             $this->success([
                 'user' => [
@@ -45,7 +49,9 @@ class Auth extends REST_Controller {
                     'username' => $user->username,
                     'nombre'   => $user->nombre,
                     'rol'      => $user->rol,
-                    'profesor_id' => $user->profesor_id
+                    'perfil_id'=> $user->perfil_id,
+                    'profesor_id' => $user->profesor_id,
+                    'navigation' => $menus
                 ],
                 'token' => $token
             ]);
@@ -96,7 +102,11 @@ class Auth extends REST_Controller {
                 'ci_estudiante' => $estudiante['ci'],
                 'rol'       => 'padre',
                 'curso_id'  => $estudiante['curso_id'],
-                'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo']
+                'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo'],
+                'navigation' => [
+                    ['id' => 99, 'label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'LayoutDashboard'],
+                    ['id' => 100, 'label' => 'Calendario', 'path' => '/calendario', 'icon' => 'CalendarRange']
+                ]
             ],
             'token' => $token
         ]);
@@ -142,7 +152,11 @@ class Auth extends REST_Controller {
                     'ci_estudiante' => $estudiante['ci'],
                     'rol'       => 'padre',
                     'curso_id'  => $estudiante['curso_id'],
-                    'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo']
+                    'curso_nombre' => $estudiante['nombre_curso'] . ' ' . $estudiante['paralelo'],
+                    'navigation' => [
+                        ['id' => 99, 'label' => 'Dashboard', 'path' => '/dashboard', 'icon' => 'LayoutDashboard'],
+                        ['id' => 100, 'label' => 'Calendario', 'path' => '/calendario', 'icon' => 'CalendarRange']
+                    ]
                 ]
             ]);
             return;
@@ -156,13 +170,19 @@ class Auth extends REST_Controller {
             return;
         }
 
+        // Cargar modelo de permisos para obtener el menú dinámico
+        $this->load->model('Permisos_model');
+        $menus = $this->Permisos_model->obtenerMenusUsuario($user->perfil_id);
+
         $this->success([
             'user' => [
                 'id'       => $user->id,
                 'username' => $user->username,
                 'nombre'   => $user->nombre,
                 'rol'      => $user->rol,
-                'profesor_id' => $user->profesor_id
+                'perfil_id'=> $user->perfil_id,
+                'profesor_id' => $user->profesor_id,
+                'navigation' => $menus
             ]
         ]);
     }
