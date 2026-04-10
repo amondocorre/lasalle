@@ -41,7 +41,7 @@ class Permisos_model extends CI_Model {
     public function obtenerPermisosPorPerfil($perfil_id) {
         $this->db->where('perfil_id', $perfil_id);
         $query = $this->db->get('perfil_menu');
-        if (!$query) return [];
+        
         $result = $query->result_array();
         
         // Retornar un array directo de menu_ids para facilitar el frontend
@@ -80,7 +80,10 @@ class Permisos_model extends CI_Model {
         $this->db->from('menus m');
         $this->db->join('perfil_menu pm', 'pm.menu_id = m.id');
         $this->db->where('pm.perfil_id', $perfil_id);
+        $this->db->where('m.activo', 1); // Solo menús activos
         $this->db->order_by('m.orden', 'ASC');
-        return $this->db->get()->result_array();
+        
+        $query = $this->db->get();
+        return $query ? $query->result_array() : [];
     }
 }
