@@ -9,9 +9,11 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$res = $conn->query("SELECT * FROM menus");
+$res = $conn->query("DESCRIBE novedades");
 while($row = $res->fetch_assoc()) {
-    echo "ID: " . $row['id'] . " | Label: " . $row['label'] . " | Path: " . $row['path'] . "\n";
+    if ($row['Field'] == 'materia_id') {
+        echo "Materia ID: " . $row['Null'] . "\n";
+    }
 }
 $conn->close();
 ?>

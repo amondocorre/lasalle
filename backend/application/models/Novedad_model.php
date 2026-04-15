@@ -16,8 +16,8 @@ class Novedad_model extends CI_Model
         $this->db->select('n.*, e.nombre_completo as nombre_estudiante, m.nombre as nombre_materia, u.nombre as nombre_usuario');
         $this->db->from($this->table . ' n');
         $this->db->join('estudiantes e', 'e.rude = n.rude');
-        $this->db->join('materias m', 'm.id = n.materia_id');
-        $this->db->join('usuarios u', 'u.id = n.usuario_id', 'left'); // Puede que no todos tengan usuario aún
+        $this->db->join('materias m', 'm.id = n.materia_id', 'left');
+        $this->db->join('usuarios u', 'u.id = n.usuario_id', 'left');
         $this->db->order_by('n.created_at', 'DESC');
         $query = $this->db->get();
         return $query->result_array();
@@ -28,19 +28,26 @@ class Novedad_model extends CI_Model
         $this->db->select('n.*, e.nombre_completo as nombre_estudiante, m.nombre as nombre_materia, u.nombre as nombre_usuario');
         $this->db->from($this->table . ' n');
         $this->db->join('estudiantes e', 'e.rude = n.rude');
-        $this->db->join('materias m', 'm.id = n.materia_id');
+        $this->db->join('materias m', 'm.id = n.materia_id', 'left');
         $this->db->join('usuarios u', 'u.id = n.usuario_id', 'left');
         $this->db->where('n.id', $id);
         return $this->db->get()->row_array();
     }
 
-    public function get_by_student_paginated($rude, $limit = 10, $offset = 0)
+    public function get_by_student_paginated($rude, $limit = 50, $offset = 0, $desde = null, $hasta = null)
     {
         $this->db->select('n.*, m.nombre as nombre_materia, u.nombre as nombre_profesor');
         $this->db->from($this->table . ' n');
-        $this->db->join('materias m', 'm.id = n.materia_id');
+        $this->db->join('materias m', 'm.id = n.materia_id', 'left');
         $this->db->join('usuarios u', 'u.id = n.usuario_id', 'left');
         $this->db->where('n.rude', $rude);
+
+        if ($desde) {
+            $this->db->where('DATE(n.created_at) >=', $desde);
+        }
+        if ($hasta) {
+            $this->db->where('DATE(n.created_at) <=', $hasta);
+        }
         $this->db->order_by('n.created_at', 'DESC');
         $this->db->limit($limit, $offset);
         $query = $this->db->get();
@@ -64,9 +71,15 @@ class Novedad_model extends CI_Model
         return $res;
     }
 
-    public function count_by_student($rude)
+    public function count_by_student($rude, $desde = null, $hasta = null)
     {
         $this->db->where('rude', $rude);
+        if ($desde) {
+            $this->db->where('DATE(created_at) >=', $desde);
+        }
+        if ($hasta) {
+            $this->db->where('DATE(created_at) <=', $hasta);
+        }
         return $this->db->count_all_results($this->table);
     }
 
@@ -87,7 +100,7 @@ class Novedad_model extends CI_Model
         foreach ($indicadores as $ind) {
             $data[] = [
                 'novedad_id' => $novedad_id,
-                'tipo' => $ind['tipo'], // 'académico' o 'conductual'
+                'tipo' => $ind['tipo'], // 'académico', 'conductual' o 'presentación'
                 'indicador' => $ind['indicador']
             ];
         }

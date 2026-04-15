@@ -102,6 +102,7 @@ $route['api/profesores/(:num)']['PUT']         = 'Profesores/update/$1';
 $route['api/profesores/(:num)']['DELETE']      = 'Profesores/destroy/$1';
 
 // ---- Novedades ----
+$route['api/novedades/config']['GET']          = 'Novedades/config';
 $route['api/novedades']['GET']                 = 'Novedades/index';
 $route['api/novedades']['POST']                = 'Novedades/store';
 $route['api/novedades/(:num)']['GET']          = 'Novedades/show/$1';
@@ -113,6 +114,7 @@ $route['api/reportes/detalle_curso/(:num)']['GET'] = 'Reportes/detalle_curso/$1'
 $route['api/reportes/stats_dashboard']['GET'] = 'Reportes/stats_dashboard';
 $route['api/reportes/licencias_monitoreo']['GET'] = 'Reportes/licencias_monitoreo';
 $route['api/reportes/retrasos_stats']['GET'] = 'Reportes/retrasos_stats';
+$route['api/reportes/consolidado']['GET'] = 'Reportes/consolidado_mensual';
 $route['api/reportes/historial_retrasos/(:num)']['GET'] = 'Reportes/historial_retrasos/$1';
 $route['api/reportes/monitor_accesos_padres']['GET'] = 'Reportes/monitor_accesos_padres';
 

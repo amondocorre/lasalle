@@ -3,11 +3,12 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 
 class Reporte_model extends CI_Model
 {
-    public function get_monitor_rendimiento($gestion = null, $mes = null, $tipo = null)
+    public function get_monitor_rendimiento($gestion = null, $mes = null, $tipo = null, $gravedad = null)
     {
         $this->db->select("c.id as curso_id, CONCAT(c.nombre, ' ', c.paralelo) as curso_nombre");
         $this->db->select("COALESCE(SUM(CASE WHEN ni.tipo = 'académico' THEN 1 ELSE 0 END), 0) as total_academicas", FALSE);
         $this->db->select("COALESCE(SUM(CASE WHEN ni.tipo = 'conductual' THEN 1 ELSE 0 END), 0) as total_conductuales", FALSE);
+        $this->db->select("COALESCE(SUM(CASE WHEN ni.tipo = 'presentación' THEN 1 ELSE 0 END), 0) as total_presentacion", FALSE);
         $this->db->select("COUNT(ni.id) as total_novedades", FALSE);
         $this->db->from('cursos c');
         $this->db->join('estudiante_curso ec', 'ec.curso_id = c.id', 'left');
@@ -18,6 +19,9 @@ class Reporte_model extends CI_Model
             if (!empty($gestion)) {
                   $join_novedades .= " AND YEAR(n.created_at) = " . (int)$gestion;
             }
+        }
+        if (!empty($gravedad)) {
+            $join_novedades .= " AND n.gravedad = " . $this->db->escape($gravedad);
         }
         $this->db->join('novedades n', $join_novedades, 'left');
         
@@ -37,12 +41,13 @@ class Reporte_model extends CI_Model
         return $this->db->get()->result_array();
     }
 
-    public function get_detalle_curso($curso_id, $gestion = null, $mes = null, $tipo = null)
+    public function get_detalle_curso($curso_id, $gestion = null, $mes = null, $tipo = null, $gravedad = null)
     {
         $this->db->select("e.rude, e.nombre_completo as nombre_estudiante");
-        $this->db->select("MAX(n.created_at) as ultima_novedad");
+        $this->db->select("MAX(n.created_at) as ultima_novedad, MAX(n.gravedad) as ultima_gravedad");
         $this->db->select("COALESCE(SUM(CASE WHEN ni.tipo = 'académico' THEN 1 ELSE 0 END), 0) as total_academicas", FALSE);
         $this->db->select("COALESCE(SUM(CASE WHEN ni.tipo = 'conductual' THEN 1 ELSE 0 END), 0) as total_conductuales", FALSE);
+        $this->db->select("COALESCE(SUM(CASE WHEN ni.tipo = 'presentación' THEN 1 ELSE 0 END), 0) as total_presentacion", FALSE);
         $this->db->select("COUNT(ni.id) as total_novedades", FALSE);
         $this->db->from('estudiantes e');
         $this->db->join('estudiante_curso ec', 'ec.rude = e.rude');
@@ -54,6 +59,9 @@ class Reporte_model extends CI_Model
             if (!empty($gestion)) {
                   $join_novedades .= " AND YEAR(n.created_at) = " . (int)$gestion;
             }
+        }
+        if (!empty($gravedad)) {
+            $join_novedades .= " AND n.gravedad = " . $this->db->escape($gravedad);
         }
         $this->db->join('novedades n', $join_novedades, 'left');
         
@@ -95,7 +103,7 @@ class Reporte_model extends CI_Model
         $this->db->join('cursos c', 'ec.curso_id = c.id');
         $this->db->where('l.estado', 'aprobada');
         $this->db->where($this->db->escape($fecha) . ' >= l.fecha_inicio', null, false);
-        $this->db->where($this->db->escape($fecha) . ' < DATE_ADD(l.fecha_inicio, INTERVAL l.dias DAY)', null, false);
+        $this->db->where($this->db->escape($fecha) . ' <= l.fecha_fin', null, false);
         $this->db->order_by('c.id', 'ASC');
         $this->db->order_by('e.nombre_completo', 'ASC');
         return $this->db->get()->result_array();
@@ -186,5 +194,53 @@ class Reporte_model extends CI_Model
         }
         
         return $query->result_array();
+    }
+
+    public function get_consolidado_mensual($curso_id, $gestion, $mes)
+    {
+        // 1. Obtener estudiantes del curso
+        $this->db->select("e.rude, e.nombre_completo");
+        $this->db->from("estudiantes e");
+        $this->db->join("estudiante_curso ec", "ec.rude = e.rude");
+        $this->db->where("ec.curso_id", $curso_id);
+        $this->db->order_by("e.nombre_completo", "ASC");
+        $estudiantes = $this->db->get()->result_array();
+
+        if (empty($estudiantes)) return [];
+
+        $rudes = array_column($estudiantes, 'rude');
+
+        // 2. Obtener retrasos del mes
+        $this->db->select("rude, DAY(fecha) as dia");
+        $this->db->from("retrasos");
+        $this->db->where_in("rude", $rudes);
+        $this->db->where("MONTH(fecha)", $mes);
+        $this->db->where("YEAR(fecha)", $gestion);
+        $retrasos = $this->db->get()->result_array();
+
+        // 3. Obtener licencias del mes
+        // Una licencia puede cubrir varios días. 
+        // Buscamos licencias que se solapen con el mes solicitado.
+        $this->db->select("rude, fecha_inicio, fecha_fin");
+        $this->db->from("licencias");
+        $this->db->where_in("rude", $rudes);
+        $this->db->where("estado", "aprobada");
+        $this->db->group_start();
+            $this->db->where("MONTH(fecha_inicio) =", $mes);
+            $this->db->or_where("MONTH(fecha_fin) =", $mes);
+        $this->db->group_end();
+        if ($gestion) {
+            $this->db->group_start();
+                $this->db->where("YEAR(fecha_inicio) =", $gestion);
+                $this->db->or_where("YEAR(fecha_fin) =", $gestion);
+            $this->db->group_end();
+        }
+        $licencias = $this->db->get()->result_array();
+
+        return [
+            'estudiantes' => $estudiantes,
+            'retrasos' => $retrasos,
+            'licencias' => $licencias
+        ];
     }
 }

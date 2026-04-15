@@ -47,6 +47,7 @@ class Retrasos extends REST_Controller {
             'fecha'          => $data['fecha'] ?? date('Y-m-d'),
             'hora'           => $data['hora'] ?? date('H:i:s'),
             'motivo'         => $data['motivo'] ?? null,
+            'observacion'    => $data['observacion'] ?? null,
             'cita_padre'     => (isset($data['cita_padre']) && $data['cita_padre']) ? 1 : 0,
             'fecha_cita'     => $data['fecha_cita'] ?? null,
             'hora_cita'      => $data['hora_cita'] ?? null,
@@ -77,7 +78,11 @@ class Retrasos extends REST_Controller {
      * GET /api/retrasos/estudiante/(:any)
      */
     public function porEstudiante($rude) {
-        $retrasos = $this->Retraso_model->obtenerPorEstudiante($rude);
+        $filtros = [
+            'fecha_desde' => $this->input->get('fecha_desde'),
+            'fecha_hasta' => $this->input->get('fecha_hasta')
+        ];
+        $retrasos = $this->Retraso_model->obtenerPorEstudiante($rude, $filtros);
         $this->success($retrasos);
     }
 }

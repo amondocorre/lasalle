@@ -9,9 +9,8 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$res = $conn->query("SELECT * FROM menus");
-while($row = $res->fetch_assoc()) {
-    echo "ID: " . $row['id'] . " | Label: " . $row['label'] . " | Path: " . $row['path'] . "\n";
-}
+$res = $conn->query("SHOW CREATE TABLE novedades");
+$row = $res->fetch_assoc();
+echo $row['Create Table'];
 $conn->close();
 ?>

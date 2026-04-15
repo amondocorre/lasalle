@@ -59,10 +59,17 @@ class Licencia_model extends CI_Model
     /**
      * Lista el historial de licencias de un estudiante, con archivos adjuntos.
      */
-    public function porEstudiante(string $rude): array
+    public function porEstudiante(string $rude, $desde = null, $hasta = null): array
     {
+        $this->db->where('rude', $rude);
+        if ($desde) {
+            $this->db->where('fecha_inicio >=', $desde);
+        }
+        if ($hasta) {
+            $this->db->where('fecha_inicio <=', $hasta);
+        }
+        
         $licencias = $this->db
-            ->where('rude', $rude)
             ->order_by('fecha_inicio', 'DESC')
             ->order_by('id', 'DESC')
             ->get(self::TABLA)
@@ -79,12 +86,44 @@ class Licencia_model extends CI_Model
     }
 
     /**
+     * Calcula la fecha de fin saltando fines de semana
+     */
+    private function calcularFechaFin($fecha_inicio, $dias_habiles)
+    {
+        $fecha = new DateTime($fecha_inicio);
+        $count = 0;
+        
+        // El primer día hábil
+        $dow = (int)$fecha->format('w');
+        while ($dow == 0 || $dow == 6) {
+            $fecha->modify('+1 day');
+            $dow = (int)$fecha->format('w');
+        }
+
+        $count = 1;
+        while ($count < $dias_habiles) {
+            $fecha->modify('+1 day');
+            $dow = (int)$fecha->format('w');
+            if ($dow != 0 && $dow != 6) {
+                $count++;
+            }
+        }
+        return $fecha->format('Y-m-d');
+    }
+
+    /**
      * Crea una nueva licencia y devuelve su ID.
      */
     public function crear(array $data): int
     {
         $campos = ['rude', 'fecha_inicio', 'dias', 'motivo', 'solicitante', 'ci_solicitante', 'estado', 'observaciones', 'registrado_por'];
         $insert = array_intersect_key($data, array_flip($campos));
+        
+        // Calcular fecha_fin basada en dias hábiles
+        if (isset($insert['fecha_inicio']) && isset($insert['dias'])) {
+            $insert['fecha_fin'] = $this->calcularFechaFin($insert['fecha_inicio'], $insert['dias']);
+        }
+
         $this->db->insert(self::TABLA, $insert);
         return $this->db->insert_id();
     }

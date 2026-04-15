@@ -16,8 +16,9 @@ class Reportes extends REST_Controller
         $gestion = $this->input->get('gestion') ?: date('Y');
         $mes = $this->input->get('mes'); // Can be empty to fetch all year
         $tipo = $this->input->get('tipo_novedad'); // 'académico', 'conductual' o null
+        $gravedad = $this->input->get('gravedad');
         
-        $datos = $this->Reporte_model->get_monitor_rendimiento($gestion, $mes, $tipo);
+        $datos = $this->Reporte_model->get_monitor_rendimiento($gestion, $mes, $tipo, $gravedad);
         
         $umbral_alerta = 10;
         foreach ($datos as &$d) {
@@ -38,8 +39,9 @@ class Reportes extends REST_Controller
         $gestion = $this->input->get('gestion') ?: date('Y');
         $mes = $this->input->get('mes');
         $tipo = $this->input->get('tipo_novedad');
+        $gravedad = $this->input->get('gravedad');
         
-        $datos = $this->Reporte_model->get_detalle_curso($curso_id, $gestion, $mes, $tipo);
+        $datos = $this->Reporte_model->get_detalle_curso($curso_id, $gestion, $mes, $tipo, $gravedad);
         
         $this->success($datos);
     }
@@ -107,5 +109,19 @@ class Reportes extends REST_Controller
         } catch (\Error $e) {
             $this->error('Error: ' . $e->getMessage() . ' at ' . $e->getFile() . ':' . $e->getLine(), 500);
         }
+    }
+    public function consolidado_mensual()
+    {
+        $curso_id = $this->input->get('curso_id');
+        $mes      = $this->input->get('mes') ?: date('m');
+        $anio     = $this->input->get('anio') ?: date('Y');
+
+        if (!$curso_id) {
+            $this->error('El curso_id es obligatorio', 400);
+            return;
+        }
+
+        $datos = $this->Reporte_model->get_consolidado_mensual($curso_id, $anio, $mes);
+        $this->success($datos);
     }
 }

@@ -57,7 +57,10 @@ class Licencias extends REST_Controller
             return;
         }
 
-        $licencias = $this->Licencia_model->porEstudiante($rude);
+        $fecha_desde = $this->input->get('fecha_desde');
+        $fecha_hasta = $this->input->get('fecha_hasta');
+
+        $licencias = $this->Licencia_model->porEstudiante($rude, $fecha_desde, $fecha_hasta);
 
         $this->success([
             'estudiante' => $estudiante,

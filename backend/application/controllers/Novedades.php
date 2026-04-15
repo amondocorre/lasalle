@@ -29,6 +29,40 @@ class Novedades extends REST_Controller
     }
 
     /**
+     * GET /api/novedades/config
+     * Obtiene los indicadores configurables
+     */
+    public function config(): void
+    {
+        try {
+            $this->db->where('activo', 1);
+            $res = $this->db->get('config_indicadores')->result_array();
+            
+            $config = [
+                'academic' => [],
+                'behavioral' => [],
+                'presentation' => []
+            ];
+            
+            foreach ($res as $row) {
+                $key = 'academic';
+                if ($row['tipo'] === 'conductual') $key = 'behavioral';
+                if ($row['tipo'] === 'presentación') $key = 'presentation';
+                
+                $config[$key][] = [
+                    'id' => $row['id'],
+                    'text' => $row['indicador'],
+                    'icon' => $row['icono']
+                ];
+            }
+            
+            $this->success($config);
+        } catch (Exception $e) {
+            $this->error('Error al obtener configuración: ' . $e->getMessage(), 500);
+        }
+    }
+
+    /**
      * POST /api/novedades
      * Registra una nueva novedad
      */
@@ -37,13 +71,38 @@ class Novedades extends REST_Controller
         $input = $this->getJsonBody();
 
         $rude = $input['rude'] ?? null;
-        $materia_id = $input['materia_id'] ?? null;
+        $materia_id = !empty($input['materia_id']) ? $input['materia_id'] : null;
         $comentario_docente = $input['comentario_docente'] ?? null;
-        $usuario_id = $input['usuario_id'] ?? 1; // Default to admin or fetch from token if implemented
+        $usuario_id = $input['usuario_id'] ?? 1; 
         $indicadores = $input['indicadores'] ?? [];
+        $gravedad = $input['gravedad'] ?? 'Leve';
 
-        if (!$rude || !$materia_id) {
-            $this->error('El estudiante y la materia son obligatorios.', 400);
+        // Determinar si hay indicadores de presentación (flexibilidad con tildes)
+        $hasPresentation = false;
+        if (!empty($indicadores)) {
+            foreach ($indicadores as $ind) {
+                $tipo = strtolower($ind['tipo'] ?? '');
+                // Comprobar variaciones comunes o coincidencia parcial
+                if ($tipo === 'presentación' || $tipo === 'presentacion' || strpos($tipo, 'presen') !== false) {
+                    $hasPresentation = true;
+                    break;
+                }
+            }
+        }
+
+        if (!$rude) {
+            $this->error('El estudiante es obligatorio.', 400);
+            return;
+        }
+
+        if (!$hasPresentation && !$materia_id) {
+            $this->error('La materia es obligatoria para este tipo de registro.', 400);
+            return;
+        }
+
+        // Validación de comentario obligatorio para faltas graves
+        if (($gravedad === 'Grave' || $gravedad === 'Muy Grave') && empty(trim($comentario_docente))) {
+            $this->error('El campo "Observación Detallada" es obligatorio para faltas Graves o Muy Graves.', 400);
             return;
         }
 
@@ -53,6 +112,7 @@ class Novedades extends REST_Controller
                 'materia_id' => $materia_id,
                 'usuario_id' => $usuario_id,
                 'comentario_docente' => $comentario_docente,
+                'gravedad' => $gravedad
             ]);
 
             // Insertar indicadores
@@ -60,10 +120,36 @@ class Novedades extends REST_Controller
                 $this->Novedad_model->insert_indicadores($novedad_id, $indicadores);
             }
 
-            $this->success(['id' => $novedad_id, 'message' => 'Novedad registrada con éxito.']);
+            // Verificar reincidencia (esto podría ser un servicio aparte)
+            $alerta = $this->check_reincidencia($rude);
+
+            $this->success([
+                'id' => $novedad_id, 
+                'message' => 'Novedad registrada con éxito.',
+                'alerta' => $alerta
+            ]);
         } catch (Exception $e) {
             $this->error('Error al registrar novedad: ' . $e->getMessage(), 500);
         }
+    }
+
+    /**
+     * Verifica si un estudiante tiene 3 faltas leves para emitir alerta
+     */
+    private function check_reincidencia($rude)
+    {
+        $this->db->where('rude', $rude);
+        $this->db->where('gravedad', 'Leve');
+        $count = $this->db->count_all_results('novedades');
+
+        if ($count >= 3) {
+            return [
+                'tipo' => 'Alerta de Reincidencia',
+                'mensaje' => "El estudiante ha acumulado {$count} faltas leves. Se ha notificado al Director.",
+                'cantidad' => $count
+            ];
+        }
+        return null;
     }
 
     /**
@@ -91,11 +177,13 @@ class Novedades extends REST_Controller
     public function estudiante($rude): void
     {
         try {
-            $limit = (int) $this->input->get('limit') ?: 10;
+            $limit = (int) $this->input->get('limit') ?: 50;
             $offset = (int) $this->input->get('offset') ?: 0;
+            $fecha_desde = $this->input->get('fecha_desde');
+            $fecha_hasta = $this->input->get('fecha_hasta');
             
-            $historial = $this->Novedad_model->get_by_student_paginated($rude, $limit, $offset);
-            $total = $this->Novedad_model->count_by_student($rude);
+            $historial = $this->Novedad_model->get_by_student_paginated($rude, $limit, $offset, $fecha_desde, $fecha_hasta);
+            $total = $this->Novedad_model->count_by_student($rude, $fecha_desde, $fecha_hasta);
             
             $this->success([
                 'novedades' => $historial,

@@ -9,9 +9,9 @@ if ($conn->connect_error) {
     die("Connection failed: " . $conn->connect_error);
 }
 
-$res = $conn->query("SELECT * FROM menus");
-while($row = $res->fetch_assoc()) {
-    echo "ID: " . $row['id'] . " | Label: " . $row['label'] . " | Path: " . $row['path'] . "\n";
+$res = $conn->query("SHOW TABLES");
+while($row = $res->fetch_array()) {
+    echo $row[0] . "\n";
 }
 $conn->close();
 ?>

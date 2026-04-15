@@ -26,10 +26,18 @@ class Retraso_model extends CI_Model {
         return $this->db->get()->result_array();
     }
 
-    public function obtenerPorEstudiante($rude) {
+    public function obtenerPorEstudiante($rude, $filtros = []) {
         $this->db->select('r.*');
         $this->db->from('retrasos r');
         $this->db->where('r.rude', $rude);
+
+        if (!empty($filtros['fecha_desde'])) {
+            $this->db->where('r.fecha >=', $filtros['fecha_desde']);
+        }
+        if (!empty($filtros['fecha_hasta'])) {
+            $this->db->where('r.fecha <=', $filtros['fecha_hasta']);
+        }
+
         $this->db->order_by('r.fecha', 'DESC');
         $this->db->order_by('r.hora', 'DESC');
         return $this->db->get()->result_array();
