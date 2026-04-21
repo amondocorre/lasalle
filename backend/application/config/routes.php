@@ -50,6 +50,7 @@ $route['api/licencias']['GET']               = 'Licencias/index';
 $route['api/licencias']['POST']              = 'Licencias/store';
 $route['api/licencias/(:num)']['GET']        = 'Licencias/show/$1';
 $route['api/licencias/(:num)']['PUT']        = 'Licencias/update/$1';
+$route['api/licencias/(:num)']['DELETE']     = 'Licencias/destroy/$1';
 $route['api/licencias/(:num)/upload']['POST'] = 'Licencias/uploadArchivo/$1';
 $route['api/licencias/estudiante/(:any)']['GET'] = 'Licencias/porEstudiante/$1';
 

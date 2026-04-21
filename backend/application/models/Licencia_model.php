@@ -149,4 +149,24 @@ class Licencia_model extends CI_Model
         $this->db->insert(self::TABLA_ARCHIVOS, $insert);
         return $this->db->insert_id();
     }
+
+    /**
+     * Elimina una licencia y sus archivos físicos asociados.
+     */
+    public function eliminar(int $id): bool
+    {
+        // 1. Buscar archivos para eliminarlos del disco
+        $archivos = $this->db->get_where(self::TABLA_ARCHIVOS, ['licencia_id' => $id])->result_array();
+        foreach ($archivos as $arc) {
+            $path = FCPATH . $arc['ruta'];
+            if (file_exists($path)) {
+                unlink($path);
+            }
+        }
+
+        // 2. Eliminar registros (la DB debería tener ON DELETE CASCADE, pero lo hacemos manual por seguridad)
+        $this->db->delete(self::TABLA_ARCHIVOS, ['licencia_id' => $id]);
+        $this->db->where('id', $id);
+        return $this->db->delete(self::TABLA);
+    }
 }

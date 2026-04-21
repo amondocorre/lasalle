@@ -203,6 +203,24 @@ class Licencias extends REST_Controller
         }
     }
 
+    /**
+     * DELETE /api/licencias/{id}
+     * Elimina una licencia y libera el espacio ocupado por sus adjuntos.
+     */
+    public function destroy(int $id): void
+    {
+        $licencia = $this->Licencia_model->obtenerConArchivos($id);
+        if (! $licencia) {
+            $this->error('Licencia no encontrada', 404);
+            return;
+        }
+
+        $ok = $this->Licencia_model->eliminar($id);
+        $ok
+            ? $this->success(null, 'Licencia eliminada correctamente')
+            : $this->error('Error al intentar eliminar la licencia', 500);
+    }
+
     /** Valida los campos de la licencia. */
     private function validarLicencia(array $data): array
     {
