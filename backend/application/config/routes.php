@@ -118,6 +118,8 @@ $route['api/reportes/retrasos_stats']['GET'] = 'Reportes/retrasos_stats';
 $route['api/reportes/consolidado']['GET'] = 'Reportes/consolidado_mensual';
 $route['api/reportes/historial_retrasos/(:num)']['GET'] = 'Reportes/historial_retrasos/$1';
 $route['api/reportes/monitor_accesos_padres']['GET'] = 'Reportes/monitor_accesos_padres';
+$route['api/reportes/licencias_stats']['GET'] = 'Reportes/licencias_stats';
+$route['api/reportes/historial_licencias/(:num)']['GET'] = 'Reportes/historial_licencias/$1';
 
 $route['api/permisos/perfiles']['GET'] = 'Permisos/perfiles';
 $route['api/permisos/perfiles']['POST'] = 'Permisos/perfiles';
