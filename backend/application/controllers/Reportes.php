@@ -124,4 +124,44 @@ class Reportes extends REST_Controller
         $datos = $this->Reporte_model->get_consolidado_mensual($curso_id, $anio, $mes);
         $this->success($datos);
     }
+
+    // Obtener estadísticas agregadas de licencias
+    public function licencias_stats()
+    {
+        $gestion = $this->input->get('gestion') ?: date('Y');
+        $mes = $this->input->get('mes');
+        
+        $datos = $this->Reporte_model->get_licencias_stats($gestion, $mes);
+        
+        $totalLicencias = 0;
+        $maxLicencias = 0;
+        $cursoMax = 'N/A';
+        
+        foreach ($datos as $d) {
+            $totalLicencias += $d['total_licencias'];
+            if ($d['total_licencias'] > $maxLicencias) {
+                $maxLicencias = $d['total_licencias'];
+                $cursoMax = $d['curso_nombre'];
+            }
+        }
+        
+        $this->success([
+            'resumen' => [
+                'total_licencias' => $totalLicencias,
+                'curso_mas_licencias' => $cursoMax,
+                'max_licencias' => $maxLicencias
+            ],
+            'cursos' => $datos
+        ]);
+    }
+
+    // Obtener historial de licencias por curso
+    public function historial_licencias($curso_id)
+    {
+        $gestion = $this->input->get('gestion') ?: date('Y');
+        $mes = $this->input->get('mes');
+        
+        $datos = $this->Reporte_model->get_detalle_licencias_curso($curso_id, $gestion, $mes);
+        $this->success($datos);
+    }
 }

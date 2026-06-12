@@ -243,4 +243,58 @@ class Reporte_model extends CI_Model
             'licencias' => $licencias
         ];
     }
+
+    // Obtener estadísticas de licencias agrupadas por curso
+    public function get_licencias_stats($gestion = null, $mes = null)
+    {
+        $this->db->select("c.id as curso_id, CONCAT(c.nombre, ' ', c.paralelo) as curso_nombre");
+        $this->db->select("COUNT(l.id) as total_licencias", FALSE);
+        $this->db->select("COUNT(DISTINCT l.rude) as total_estudiantes", FALSE);
+        $this->db->from('cursos c');
+        $this->db->join('estudiante_curso ec', 'ec.curso_id = c.id', 'left');
+        
+        $join_lic = "l.rude = ec.rude AND l.estado = 'aprobada'";
+        if (!empty($mes) && $mes > 0) {
+            $join_lic .= " AND (MONTH(l.fecha_inicio) = " . (int)$mes . " OR MONTH(l.fecha_fin) = " . (int)$mes . ")";
+        }
+        if (!empty($gestion)) {
+            $join_lic .= " AND (YEAR(l.fecha_inicio) = " . (int)$gestion . " OR YEAR(l.fecha_fin) = " . (int)$gestion . ")";
+        }
+        $this->db->join('licencias l', $join_lic, 'left');
+        
+        if (!empty($gestion)) {
+            $this->db->where('c.gestion', $gestion);
+        }
+        
+        $this->db->group_by('c.id');
+        $this->db->order_by('c.nivel', 'ASC');
+        $this->db->order_by('c.nombre', 'ASC');
+        return $this->db->get()->result_array();
+    }
+
+    // Obtener historial de licencias de un curso en particular
+    public function get_detalle_licencias_curso($curso_id, $gestion = null, $mes = null)
+    {
+        $this->db->select("e.rude, e.nombre_completo as nombre_estudiante");
+        $this->db->select("MAX(l.fecha_inicio) as ultima_licencia_inicio, MAX(l.fecha_fin) as ultima_licencia_fin");
+        $this->db->select("COUNT(l.id) as total_licencias", FALSE);
+        $this->db->from('estudiantes e');
+        $this->db->join('estudiante_curso ec', 'ec.rude = e.rude');
+        $this->db->where('ec.curso_id', $curso_id);
+        
+        $join_lic = "l.rude = e.rude AND l.estado = 'aprobada'";
+        if (!empty($mes) && $mes > 0) {
+            $join_lic .= " AND (MONTH(l.fecha_inicio) = " . (int)$mes . " OR MONTH(l.fecha_fin) = " . (int)$mes . ")";
+        }
+        if (!empty($gestion)) {
+            $join_lic .= " AND (YEAR(l.fecha_inicio) = " . (int)$gestion . " OR YEAR(l.fecha_fin) = " . (int)$gestion . ")";
+        }
+        $this->db->join('licencias l', $join_lic, 'left');
+        
+        $this->db->group_by('e.rude');
+        $this->db->order_by('total_licencias', 'DESC');
+        $this->db->order_by('e.nombre_completo', 'ASC');
+        
+        return $this->db->get()->result_array();
+    }
 }
